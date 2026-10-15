@@ -119,10 +119,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-4 flex items-center justify-between">
           <div>
             <h3 className="text-lg md:text-xl font-black text-[#261C30] flex items-center gap-2">
-              <span>{currentCategoryObj ? `${currentCategoryObj.icon} ${currentCategoryObj.name}` : '✨ Todo el Catálogo'}</span>
+              <span>{currentCategoryObj ? `${currentCategoryObj.icon} ${currentCategoryObj.name}` : 'Todo el Catálogo'}</span>
               {selectedSeason !== 'todos' && (
-                <span className="text-xs font-bold bg-[#FF6B8B] text-white px-2.5 py-0.5 rounded-full">
-                  Filtro: {selectedSeason.toUpperCase()}
+                <span className="text-xs font-bold bg-[#9368B7] text-white px-2.5 py-0.5 rounded-full">
+                  {selectedSeason === 'vencimiento' ? 'Fecha Próxima' : selectedSeason === 'general' ? 'Promociones 2x1 y 3x2' : selectedSeason.toUpperCase()}
                 </span>
               )}
             </h3>

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Product, Promotion } from '@/types';
 import { useStore } from '@/context/store-context';
-import { Star, Plus, Check, Flame, Gift, Sparkles } from 'lucide-react';
+import { Star, Plus, Check, Flame, Gift, Sparkles, Clock } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface ProductCardProps {
@@ -55,13 +55,19 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
       {/* PARTE SUPERIOR DEL CARD: ESTRELLA Y AVISO DE PROMOCIÓN */}
       {/* ======================================================== */}
       {promotion ? (
-        <div className="w-full bg-gradient-to-r from-[#9368B7] via-[#FF6B8B] to-[#9368B7] text-white px-3 py-1.5 flex items-center justify-between text-xs font-black tracking-wide shadow-sm animate-pulse-subtle">
+        <div className={`w-full text-white px-3 py-1.5 flex items-center justify-between text-xs font-black tracking-wide shadow-sm animate-pulse-subtle ${
+          promotion.season_tag === 'vencimiento'
+            ? 'bg-gradient-to-r from-amber-600 via-rose-600 to-amber-700'
+            : 'bg-gradient-to-r from-[#9368B7] via-[#FF6B8B] to-[#9368B7]'
+        }`}>
           <div className="flex items-center gap-1.5 truncate">
-            <span className="text-amber-300 text-sm filter drop-shadow animate-spin" style={{ animationDuration: '4s' }}>
-              ⭐
-            </span>
+            {promotion.season_tag === 'vencimiento' ? (
+              <Clock className="w-3.5 h-3.5 text-amber-200 flex-shrink-0" />
+            ) : (
+              <Star className="w-3.5 h-3.5 text-amber-300 fill-amber-300 flex-shrink-0 animate-spin" style={{ animationDuration: '6s' }} />
+            )}
             <span className="truncate uppercase text-[11px] font-black">
-              {promotion.badge_text || '¡EN PROMOCIÓN!'}
+              {promotion.badge_text || 'EN PROMOCIÓN'}
             </span>
           </div>
           <span className="text-[10px] bg-white/20 backdrop-blur-xs px-2 py-0.5 rounded-full uppercase flex-shrink-0 font-bold">
@@ -91,8 +97,16 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
         {/* Promo Floating Tag on photo (left) */}
         {promotion && (
           <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
-            <span className="inline-flex items-center gap-1 bg-white/95 backdrop-blur-sm text-[#FF6B8B] px-2.5 py-1 rounded-full text-[10px] font-black shadow-md border border-[#FF6B8B]/20">
-              <Flame className="w-3 h-3 fill-rose-500 text-rose-500" />
+            <span className={`inline-flex items-center gap-1 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-black shadow-md border ${
+              promotion.season_tag === 'vencimiento'
+                ? 'text-amber-700 border-amber-300'
+                : 'text-[#FF6B8B] border-[#FF6B8B]/20'
+            }`}>
+              {promotion.season_tag === 'vencimiento' ? (
+                <Clock className="w-3 h-3 text-amber-600" />
+              ) : (
+                <Flame className="w-3 h-3 fill-rose-500 text-rose-500" />
+              )}
               {promotion.type === '2x1' ? 'Lleva 2 Paga 1' : promotion.type === '3x2' ? 'Lleva 3 Paga 2' : 'Oferta'}
             </span>
           </div>

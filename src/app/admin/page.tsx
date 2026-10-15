@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
 import { Product, Promotion, Category, PromoType, SeasonCampaign } from '@/types';
+import { translateToKorean } from '@/lib/korean-translator';
 import * as XLSX from 'xlsx';
 import { 
   Lock, 
@@ -1006,19 +1007,32 @@ export default function AdminPage() {
                     type="text"
                     required
                     value={prodForm.name}
-                    onChange={(e) => setProdForm({ ...prodForm, name: e.target.value })}
-                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setProdForm({ 
+                        ...prodForm, 
+                        name: val,
+                        korean_name: translateToKorean(val)
+                      });
+                    }}
+                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7]"
                     placeholder="Ej. Samyang Buldak Carbonara"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-[#261C30] block mb-1">Nombre en Coreano</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-bold text-[#261C30] block">Nombre en Coreano</label>
+                    <span className="text-[10px] text-[#9368B7] font-semibold bg-[#EFE6F7] px-1.5 py-0.5 rounded flex items-center gap-1">
+                      <Lock className="w-2.5 h-2.5" /> Automático
+                    </span>
+                  </div>
                   <input
                     type="text"
+                    readOnly
+                    tabIndex={-1}
                     value={prodForm.korean_name}
-                    onChange={(e) => setProdForm({ ...prodForm, korean_name: e.target.value })}
-                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
-                    placeholder="Ej. 불닭볶음면 까르보"
+                    className="w-full bg-[#FAF8F5]/80 p-2 rounded-xl border border-[#EADBEE] text-[#9368B7] font-bold cursor-not-allowed select-all"
+                    placeholder="Se traduce automáticamente al escribir..."
                   />
                 </div>
               </div>
@@ -1414,11 +1428,12 @@ export default function AdminPage() {
                     className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
                   >
                     <option value="general">General / Regular</option>
-                    <option value="halloween">🎃 Halloween</option>
-                    <option value="navidad">🎄 Navidad</option>
-                    <option value="san_valentin">💖 San Valentín</option>
-                    <option value="verano">☀️ Verano</option>
-                    <option value="aniversario">🎂 Aniversario</option>
+                    <option value="vencimiento">Liquidación por Fecha Próxima</option>
+                    <option value="halloween">Especial Halloween</option>
+                    <option value="navidad">Especial Navidad</option>
+                    <option value="san_valentin">San Valentín</option>
+                    <option value="verano">Temporada Verano</option>
+                    <option value="aniversario">Aniversario Hoshi</option>
                   </select>
                 </div>
               </div>
@@ -1431,7 +1446,7 @@ export default function AdminPage() {
                   value={promoForm.badge_text}
                   onChange={(e) => setPromoForm({ ...promoForm, badge_text: e.target.value })}
                   className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
-                  placeholder="Ej. 🔥 2x1 BULDAK"
+                  placeholder="Ej. PROMO 2x1 o LIQUIDACIÓN"
                 />
               </div>
 

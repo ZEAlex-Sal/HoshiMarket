@@ -63,7 +63,7 @@ export default function Header() {
         <div className="hidden md:flex flex-1 max-w-md mx-4 relative">
           <input
             type="text"
-            placeholder="Buscar ramens, melona, snacks, photocards, mangas..."
+            placeholder="Busca tu producto..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-white pl-10 pr-4 py-2.5 rounded-full border border-[#EADBEE] text-sm text-[#261C30] placeholder-[#9D91A8] focus:outline-none focus:ring-2 focus:ring-[#9368B7] focus:border-transparent transition-all shadow-sm"
@@ -109,7 +109,7 @@ export default function Header() {
         <div className="relative">
           <input
             type="text"
-            placeholder="Buscar ramens, helados, mangas, k-pop..."
+            placeholder="Busca tu producto..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-white pl-10 pr-9 py-2 rounded-full border border-[#EADBEE] text-xs text-[#261C30] placeholder-[#9D91A8] focus:outline-none focus:ring-2 focus:ring-[#9368B7]"

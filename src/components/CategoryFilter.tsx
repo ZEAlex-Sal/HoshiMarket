@@ -3,7 +3,7 @@
 import React from 'react';
 import { useStore } from '@/context/store-context';
 import { SeasonCampaign } from '@/types';
-import { Flame, Sparkles, Heart, Ghost, Trees, Layers } from 'lucide-react';
+import { Flame, Sparkles, Heart, Ghost, Trees, Layers, Clock } from 'lucide-react';
 
 export default function CategoryFilter() {
   const { 
@@ -18,11 +18,12 @@ export default function CategoryFilter() {
   const activePromosCount = promotions.filter(p => p.is_active).length;
 
   const seasonalFilters: Array<{ id: SeasonCampaign; label: string; icon: React.ReactNode; color: string }> = [
-    { id: 'todos', label: 'Todo el Catálogo', icon: <Layers className="w-3.5 h-3.5" />, color: 'hover:border-[#9368B7]' },
-    { id: 'general', label: '🔥 Promos 2x1 & 3x2', icon: <Flame className="w-3.5 h-3.5 text-rose-500" />, color: 'hover:border-rose-400' },
-    { id: 'halloween', label: '🎃 Halloween', icon: <Ghost className="w-3.5 h-3.5 text-orange-500" />, color: 'hover:border-orange-400' },
-    { id: 'san_valentin', label: '💖 San Valentín', icon: <Heart className="w-3.5 h-3.5 text-pink-500" />, color: 'hover:border-pink-400' },
-    { id: 'navidad', label: '🎄 Navidad', icon: <Trees className="w-3.5 h-3.5 text-emerald-600" />, color: 'hover:border-emerald-400' },
+    { id: 'todos', label: 'Todo el Catálogo', icon: <Layers className="w-3.5 h-3.5 text-[#9368B7]" />, color: 'hover:border-[#9368B7]' },
+    { id: 'general', label: 'Promos 2x1 & 3x2', icon: <Flame className="w-3.5 h-3.5 text-rose-500" />, color: 'hover:border-rose-400' },
+    { id: 'vencimiento', label: 'Ofertas por Fecha Próxima', icon: <Clock className="w-3.5 h-3.5 text-amber-500" />, color: 'hover:border-amber-400' },
+    { id: 'halloween', label: 'Especial Halloween', icon: <Ghost className="w-3.5 h-3.5 text-orange-500" />, color: 'hover:border-orange-400' },
+    { id: 'san_valentin', label: 'San Valentín', icon: <Heart className="w-3.5 h-3.5 text-pink-500" />, color: 'hover:border-pink-400' },
+    { id: 'navidad', label: 'Navidad Coreana', icon: <Trees className="w-3.5 h-3.5 text-emerald-600" />, color: 'hover:border-emerald-400' },
   ];
 
   return (

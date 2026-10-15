@@ -86,11 +86,23 @@ export const INITIAL_PROMOTIONS: Promotion[] = [
     description: "¡Llévate 2 ramens Buldak Carbonara y paga solo 1!",
     type: "2x1",
     season_tag: "general",
-    badge_text: "🔥 PROMO 2x1",
+    badge_text: "PROMO 2x1",
     badge_color: "#E85D75",
     product_ids: ["prod-buldak-carb"],
     is_active: true,
-    banner_message: "🍜 ¡Lleva 2 Buldak Carbonara por el precio de 1!"
+    banner_message: "Lleva 2 Buldak Carbonara por el precio de 1"
+  },
+  {
+    id: "promo-vencimiento",
+    name: "Liquidación por Fecha Próxima",
+    description: "2x1 por lote cercano a fecha de vencimiento",
+    type: "2x1",
+    season_tag: "vencimiento",
+    badge_text: "LIQUIDACIÓN 2x1",
+    badge_color: "#D97706",
+    product_ids: ["prod-chapagetti"],
+    is_active: true,
+    banner_message: "Oferta especial 2x1 en productos por fecha próxima"
   },
   {
     id: "promo-3x2-melona",
@@ -98,23 +110,23 @@ export const INITIAL_PROMOTIONS: Promotion[] = [
     description: "Combina tus paletas Melona favoritas: 3 al precio de 2",
     type: "3x2",
     season_tag: "verano",
-    badge_text: "🍦 3x2 MELONA",
+    badge_text: "3x2 MELONA",
     badge_color: "#10B981",
     product_ids: ["prod-melona-melon", "prod-melona-mango"],
     is_active: true,
-    banner_message: "🍦 ¡Refrescante 3x2 en paletas Melona!"
+    banner_message: "Refrescante 3x2 en paletas Melona"
   },
   {
     id: "promo-halloween",
-    name: "Especial Halloween de Terror",
+    name: "Especial Halloween",
     description: "2x1 en Buldak 2x Spicy para los más valientes",
     type: "2x1",
     season_tag: "halloween",
-    badge_text: "🎃 HALLOWEEN 2x1",
+    badge_text: "HALLOWEEN 2x1",
     badge_color: "#F97316",
     product_ids: ["prod-buldak-2x"],
     is_active: true,
-    banner_message: "🎃 ¡Edición Halloween: 2x1 en ramens ultra picantes!"
+    banner_message: "Edición Halloween: 2x1 en ramens ultra picantes"
   },
   {
     id: "promo-san-valentin",
@@ -123,11 +135,11 @@ export const INITIAL_PROMOTIONS: Promotion[] = [
     type: "discount_percent",
     discount_value: 20,
     season_tag: "san_valentin",
-    badge_text: "💖 SAN VALENTÍN -20%",
+    badge_text: "SAN VALENTÍN -20%",
     badge_color: "#EC4899",
     product_ids: ["prod-pepero-almond", "prod-pepero-choco"],
     is_active: true,
-    banner_message: "💖 Especial San Valentín: 20% de descuento en Peperos"
+    banner_message: "Especial San Valentín: 20% de descuento en Peperos"
   },
   {
     id: "promo-navidad",
@@ -135,11 +147,11 @@ export const INITIAL_PROMOTIONS: Promotion[] = [
     description: "3x2 en bebidas asiáticas para celebrar con tus amigos",
     type: "3x2",
     season_tag: "navidad",
-    badge_text: "🎄 NAVIDAD 3x2",
+    badge_text: "NAVIDAD 3x2",
     badge_color: "#059669",
     product_ids: ["prod-milkis", "prod-chilsung"],
     is_active: true,
-    banner_message: "🎄 ¡Regalos de Navidad: 3x2 en bebidas coreanas seleccionadas!"
+    banner_message: "Regalos de Navidad: 3x2 en bebidas coreanas seleccionadas"
   }
 ];
 
@@ -205,7 +217,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     image_url: "https://images.unsplash.com/photo-1552611052-33e04de081de?auto=format&fit=crop&w=700&q=80",
     in_stock: true,
     stock_quantity: 25,
-    is_featured: false
+    is_featured: false,
+    promotion_id: "promo-vencimiento"
   },
   {
     id: "prod-melona-melon",

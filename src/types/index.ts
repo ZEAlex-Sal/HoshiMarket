@@ -2,12 +2,14 @@ export type PromoType = '2x1' | '3x2' | 'discount_percent' | 'combo' | 'fixed_pr
 
 export type SeasonCampaign = 
   | 'todos'
+  | 'general'
+  | 'vencimiento'
+  | 'liquidacion'
   | 'halloween'
   | 'navidad'
   | 'san_valentin'
   | 'verano'
-  | 'aniversario'
-  | 'general';
+  | 'aniversario';
 
 export interface Promotion {
   id: string;
