@@ -82,19 +82,26 @@ export default function Home() {
               호시
             </div>
 
-            <div className="relative z-10 max-w-2xl space-y-3">
-              <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-black tracking-wide text-white border border-white/20">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>CATÁLOGO DIGITAL HOSHI MARKET • HUÁNUCO</span>
+            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-[#FFF9F2] p-2 shadow-xl flex-shrink-0 border-2 border-white/60 flex items-center justify-center overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png" alt="Hoshi Market" className="w-full h-full object-contain" />
               </div>
 
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
-                Sabores, Ramens y K-Culture directamente a tu mesa
-              </h2>
+              <div className="max-w-2xl space-y-2.5">
+                <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-black tracking-wide text-white border border-white/20">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>CATÁLOGO DIGITAL HOSHI MARKET • HUÁNUCO</span>
+                </div>
 
-              <p className="text-xs sm:text-sm text-[#EFE6F7] leading-relaxed">
-                Revisa nuestro catálogo de más de 500 productos coreanos originales. Agrega tus favoritos, aprovecha las promociones <span className="font-bold underline decoration-amber-300">2x1 y 3x2</span> y envía tu pedido directamente a nuestro WhatsApp oficial para coordinar recojo o delivery.
-              </p>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
+                  Sabores, Ramens y K-Culture directamente a tu mesa
+                </h2>
+
+                <p className="text-xs sm:text-sm text-[#EFE6F7] leading-relaxed">
+                  Revisa nuestro catálogo de más de 500 productos coreanos originales. Agrega tus favoritos, aprovecha las promociones <span className="font-bold underline decoration-amber-300">2x1 y 3x2</span> y envía tu pedido directamente a nuestro WhatsApp oficial para coordinar recojo o delivery.
+                </p>
+              </div>
             </div>
           </div>
         </div>

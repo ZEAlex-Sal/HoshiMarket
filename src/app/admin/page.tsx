@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
 import { Product, Promotion, Category, PromoType, SeasonCampaign } from '@/types';
@@ -22,8 +22,21 @@ import {
   Flame,
   ArrowLeft,
   Upload,
-  AlertCircle
+  AlertCircle,
+  Camera,
+  Image as ImageIcon,
+  Smile,
+  RefreshCw
 } from 'lucide-react';
+
+const CATEGORY_EMOJI_GROUPS = [
+  { group: '🍜 Ramens & Comida Coreana', emojis: ['🍜', '🥟', '🍲', '🥢', '🍱', '🍙', '🍘', '🍛', '🥩'] },
+  { group: '🍦 Helados & Dulces', emojis: ['🍦', '🍧', '🍨', '🍫', '🍪', '🍡', '🍬', '🍭', '🧁', '🍰'] },
+  { group: '🥤 Bebidas Asiáticas', emojis: ['🥤', '🧋', '🍵', '🧃', '🍶', '🥛', '☕', '🍹'] },
+  { group: '🎤 K-Pop & Merch', emojis: ['🎤', '💖', '🌟', '💿', '📸', '🎀', '🎵', '⭐', '✨', '👑'] },
+  { group: '📚 Mangas, Papelería & Skincare', emojis: ['📚', '📖', '✏️', '🎨', '🧸', '🧴', '💄', '🏷️', '🎒'] },
+  { group: '🔥 Promos & Especiales', emojis: ['🔥', '🎃', '🎄', '🎁', '💝', '⚡', '🎉', '🧧'] },
+];
 
 export default function AdminPage() {
   const { 
@@ -105,6 +118,49 @@ export default function AdminPage() {
     product_ids: [] as string[],
     is_active: true
   });
+
+  // Camera & Gallery Image Upload state
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
+  const [imageUploadMode, setImageUploadMode] = useState<'upload' | 'url'>('upload');
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+
+  const processImageFile = (file: File) => {
+    setIsProcessingImage(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_DIM = 900;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        const optimizedDataUrl = canvas.toDataURL('image/webp', 0.82) || canvas.toDataURL('image/jpeg', 0.85);
+        setProdForm(prev => ({ ...prev, image_url: optimizedDataUrl }));
+        setIsProcessingImage(false);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Handle PIN authentication (Default: 6140 or hoshi2026 - Crespo Castillo 614)
   const handleLogin = (e: React.FormEvent) => {
@@ -314,8 +370,9 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAF8F5] p-4">
         <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-[#EADBEE] shadow-2xl space-y-6 text-center">
-          <div className="w-16 h-16 rounded-3xl bg-[#EFE6F7] mx-auto flex items-center justify-center text-[#9368B7] shadow-inner">
-            <Lock className="w-8 h-8" />
+          <div className="w-20 h-20 rounded-3xl bg-[#FFF9F2] mx-auto p-2 border border-[#EADBEE] shadow-md flex items-center justify-center overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Hoshi Market" className="w-full h-full object-contain" />
           </div>
 
           <div>
@@ -380,13 +437,10 @@ export default function AdminPage() {
       <header className="bg-white border-b border-[#EADBEE] sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link 
-              href="/"
-              className="w-9 h-9 rounded-xl bg-[#FAF8F5] hover:bg-[#EFE6F7] text-[#9368B7] flex items-center justify-center border border-[#EADBEE] transition-colors"
-              title="Ver catálogo público"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
+            <div className="w-10 h-10 rounded-2xl bg-[#FFF9F2] p-1 border border-[#EADBEE] flex-shrink-0 shadow-xs flex items-center justify-center overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="Hoshi Market" className="w-full h-full object-contain" />
+            </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-black text-[#261C30]">
@@ -1040,15 +1094,116 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="font-bold text-[#261C30] block mb-1">URL de la Foto</label>
+              {/* Subir Foto: Cámara, Galería o URL */}
+              <div className="space-y-2 p-3 bg-[#FAF8F5] rounded-2xl border border-[#EADBEE]">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-[#261C30] block">
+                    Foto del Producto *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setImageUploadMode(imageUploadMode === 'upload' ? 'url' : 'upload')}
+                    className="text-[11px] text-[#9368B7] hover:underline font-bold"
+                  >
+                    {imageUploadMode === 'upload' ? '🔗 Usar enlace URL' : '📁 Subir foto o usar cámara'}
+                  </button>
+                </div>
+
+                {/* Hidden input for Camera capture (Mobile) */}
                 <input
-                  type="url"
-                  value={prodForm.image_url}
-                  onChange={(e) => setProdForm({ ...prodForm, image_url: e.target.value })}
-                  className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
-                  placeholder="https://..."
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && processImageFile(e.target.files[0])}
                 />
+
+                {/* Hidden input for Gallery / Files (Mobile & PC) */}
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && processImageFile(e.target.files[0])}
+                />
+
+                {imageUploadMode === 'upload' ? (
+                  <div className="space-y-2.5">
+                    {/* Action buttons: Camera vs Gallery */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="flex items-center justify-center gap-1.5 p-2.5 bg-white hover:bg-[#EFE6F7] text-[#9368B7] font-bold rounded-xl border border-[#D8C3E5] shadow-xs transition-colors"
+                      >
+                        <Camera className="w-4 h-4" />
+                        <span>Tomar Foto (Cámara)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => galleryInputRef.current?.click()}
+                        className="flex items-center justify-center gap-1.5 p-2.5 bg-white hover:bg-[#EFE6F7] text-[#9368B7] font-bold rounded-xl border border-[#D8C3E5] shadow-xs transition-colors"
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                        <span>Galería o Archivos</span>
+                      </button>
+                    </div>
+
+                    {isProcessingImage && (
+                      <p className="text-center text-xs text-[#9368B7] font-bold flex items-center justify-center gap-1.5 py-1">
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        Optimizando y preparando foto...
+                      </p>
+                    )}
+
+                    {/* Image Preview thumbnail if available */}
+                    {prodForm.image_url && (
+                      <div className="flex items-center gap-3 p-2 bg-white rounded-xl border border-[#EADBEE]">
+                        <div className="w-14 h-14 bg-[#FAF8F5] rounded-lg p-1 border border-[#F3EDF8] flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={prodForm.image_url}
+                            alt="Previsualización"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0 text-[11px]">
+                          <p className="font-bold text-emerald-700 flex items-center gap-1">
+                            <Check className="w-3.5 h-3.5" />
+                            Foto lista para el catálogo
+                          </p>
+                          <p className="text-[#867894] truncate">
+                            Optimizado para carga rápida en móviles
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setProdForm({ ...prodForm, image_url: '' })}
+                          className="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg"
+                          title="Quitar foto"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Manual URL fallback */
+                  <div className="space-y-1">
+                    <input
+                      type="url"
+                      value={prodForm.image_url}
+                      onChange={(e) => setProdForm({ ...prodForm, image_url: e.target.value })}
+                      className="w-full bg-white p-2 rounded-xl border border-[#EADBEE]"
+                      placeholder="https://ejemplo.com/foto-ramen.jpg"
+                    />
+                    <p className="text-[10px] text-[#867894]">
+                      Pega el enlace directo a una imagen alojada en la web.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -1125,16 +1280,57 @@ export default function AdminPage() {
                 />
               </div>
 
-              <div>
-                <label className="font-bold text-[#261C30] block mb-1">Icono / Emoji *</label>
-                <input
-                  type="text"
-                  required
-                  value={catForm.icon}
-                  onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })}
-                  className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE] text-center text-lg"
-                  placeholder="🥟"
-                />
+              {/* Selector de Icono / Emoji enriquecido */}
+              <div className="space-y-2 p-3 bg-[#FAF8F5] rounded-2xl border border-[#EADBEE]">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-[#261C30] block">
+                    Icono / Emoji de la Categoría *
+                  </label>
+                  <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full border border-[#D8C3E5] shadow-xs">
+                    <span className="text-[10px] text-[#867894] font-medium">Elegido:</span>
+                    <span className="text-lg leading-none">{catForm.icon || '✨'}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {CATEGORY_EMOJI_GROUPS.map((grp) => (
+                    <div key={grp.group} className="space-y-1">
+                      <span className="text-[10px] font-bold text-[#6B5E78] block">
+                        {grp.group}
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {grp.emojis.map((emoji) => {
+                          const isSelected = catForm.icon === emoji;
+                          return (
+                            <button
+                              key={emoji}
+                              type="button"
+                              onClick={() => setCatForm({ ...catForm, icon: emoji })}
+                              className={`w-8 h-8 rounded-xl text-base flex items-center justify-center transition-all ${
+                                isSelected
+                                  ? 'bg-[#9368B7] text-white ring-2 ring-[#9368B7] ring-offset-1 scale-110 shadow-xs'
+                                  : 'bg-white hover:bg-[#EFE6F7] border border-[#EADBEE]'
+                              }`}
+                            >
+                              {emoji}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-1 flex items-center gap-2">
+                  <span className="text-[10px] text-[#867894]">O escribe uno personalizado:</span>
+                  <input
+                    type="text"
+                    value={catForm.icon}
+                    onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })}
+                    className="w-14 bg-white p-1 rounded-lg border border-[#EADBEE] text-center text-sm"
+                    maxLength={4}
+                  />
+                </div>
               </div>
 
               <div>

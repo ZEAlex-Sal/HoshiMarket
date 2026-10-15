@@ -1,9 +1,8 @@
 "use client";
 
 import React from 'react';
-import Link from 'next/link';
 import { useStore } from '@/context/store-context';
-import { MapPin, Phone, Heart, Lock } from 'lucide-react';
+import { MapPin, Phone, Heart } from 'lucide-react';
 
 export default function Footer() {
   const { settings } = useStore();
@@ -14,8 +13,11 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-[#F3EDF8]">
           {/* Brand & Bio */}
           <div className="md:col-span-2 space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">⭐</span>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#FFF9F2] p-1 border border-[#EADBEE] flex-shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.png" alt="Hoshi Market" className="w-full h-full object-contain" />
+              </div>
               <span className="text-xl font-black text-[#261C30] tracking-tight">
                 {settings.store_name}
               </span>
@@ -87,24 +89,15 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom Credits & Hidden Admin portal link */}
+        {/* Bottom Credits */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-[#867894] gap-3">
           <p className="flex items-center gap-1">
             © 2026 {settings.store_name}. Hecho con 
             <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 inline" /> para los fans del K-lifestyle.
           </p>
-
-          <div className="flex items-center gap-3">
-            {/* Discrete Admin Link (not prominent on page, protected) */}
-            <Link 
-              href="/admin" 
-              className="text-[#9D91A8] hover:text-[#9368B7] flex items-center gap-1 transition-colors text-[11px]"
-              title="Acceso administrativo para el dueño"
-            >
-              <Lock className="w-3 h-3" />
-              <span>Portal Dueño</span>
-            </Link>
-          </div>
+          <p className="text-[11px] text-[#9D91A8]">
+            Jr. Crespo Castillo 614 • Huánuco
+          </p>
         </div>
       </div>
     </footer>

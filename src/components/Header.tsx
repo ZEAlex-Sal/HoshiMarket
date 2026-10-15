@@ -39,8 +39,9 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-3">
         {/* Logo and Brand */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-gradient-to-tr from-[#9368B7] to-[#C4B5FD] flex items-center justify-center text-white shadow-md shadow-[#9368B7]/20 flex-shrink-0 font-bold text-xl select-none">
-            ⭐
+          <div className="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-[#FFF9F2] p-1 flex items-center justify-center shadow-md shadow-[#9368B7]/20 flex-shrink-0 border border-[#EADBEE] overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Hoshi Market Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <div className="flex items-center gap-2">

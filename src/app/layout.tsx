@@ -7,7 +7,8 @@ export const metadata: Metadata = {
   description: "Catálogo oficial de Hoshi Market (Jr. Crespo Castillo 614, Huánuco). Ramens virales, paletas Melona, snacks asiáticos, bebidas, artículos K-Pop, mangas y promociones 2x1 y 3x2 con pedidos por WhatsApp.",
   keywords: ["Hoshi Market", "Huánuco", "Ramen coreano", "Melona", "K-pop", "Buldak", "Shin Ramyun", "Snacks coreanos"],
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logo.png",
+    apple: "/logo.png",
   },
 };
 
