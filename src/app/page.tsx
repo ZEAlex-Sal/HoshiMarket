@@ -9,6 +9,7 @@ import ProductCard from '@/components/ProductCard';
 import ProductDetailModal from '@/components/ProductDetailModal';
 import CartDrawer from '@/components/CartDrawer';
 import Footer from '@/components/Footer';
+import HoshiCatWatermark from '@/components/HoshiCatWatermark';
 import { Sparkles, Flame, SearchX } from 'lucide-react';
 
 export default function Home() {
@@ -76,32 +77,37 @@ export default function Home() {
       <main className="flex-1">
         {/* Hero / Seasonal Campaign Banner */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#9368B7] via-[#8553AE] to-[#6E3C99] text-white p-6 md:p-8 shadow-xl shadow-[#9368B7]/20 border border-[#D8C3E5]/30">
-            {/* Background Korean decorative watermarks */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#8E5EAF] via-[#8553AE] to-[#6E3C99] text-white p-6 sm:p-8 md:p-10 shadow-xl shadow-[#9368B7]/25 border border-[#D8C3E5]/30">
+            
+            {/* ======================================================== */}
+            {/* MARCA DE AGUA: MITAD DE LA CARA DEL GATITO HOSHI (IZQUIERDA) */}
+            {/* ======================================================== */}
+            <div className="absolute -left-24 sm:-left-28 md:-left-32 -top-10 -bottom-10 w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 pointer-events-none select-none opacity-20 filter drop-shadow">
+              <HoshiCatWatermark className="w-full h-full text-white" />
+            </div>
+
+            {/* Marca de agua decorativa coreana a la derecha (호시 = Hoshi) */}
             <div className="absolute -right-8 -bottom-8 text-8xl md:text-9xl font-black text-white/5 select-none pointer-events-none">
               호시
             </div>
 
-            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-[#FFF9F2] p-2 shadow-xl flex-shrink-0 border-2 border-white/60 flex items-center justify-center overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.png" alt="Hoshi Market" className="w-full h-full object-contain" />
+            {/* Contenido Principal del Banner */}
+            <div className="relative z-10 max-w-2xl pl-2 sm:pl-4 space-y-3">
+              <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-black tracking-wide text-white border border-white/20 shadow-xs">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>CATÁLOGO DIGITAL HOSHI MARKET • HUÁNUCO</span>
+                <span className="hidden sm:inline-block text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold">
+                  호시마켓
+                </span>
               </div>
 
-              <div className="max-w-2xl space-y-2.5">
-                <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-black tracking-wide text-white border border-white/20">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>CATÁLOGO DIGITAL HOSHI MARKET • HUÁNUCO</span>
-                </div>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
+                Sabores, Ramens y K-Culture directamente a tu mesa
+              </h2>
 
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
-                  Sabores, Ramens y K-Culture directamente a tu mesa
-                </h2>
-
-                <p className="text-xs sm:text-sm text-[#EFE6F7] leading-relaxed">
-                  Revisa nuestro catálogo de más de 500 productos coreanos originales. Agrega tus favoritos, aprovecha las promociones <span className="font-bold underline decoration-amber-300">2x1 y 3x2</span> y envía tu pedido directamente a nuestro WhatsApp oficial para coordinar recojo o delivery.
-                </p>
-              </div>
+              <p className="text-xs sm:text-sm text-[#EFE6F7] leading-relaxed">
+                Revisa nuestro catálogo de más de 500 productos coreanos originales. Agrega tus favoritos, aprovecha las promociones <span className="font-bold underline decoration-amber-300">2x1 y 3x2</span> y envía tu pedido directamente a nuestro WhatsApp oficial para coordinar recojo o delivery.
+              </p>
             </div>
           </div>
         </div>
