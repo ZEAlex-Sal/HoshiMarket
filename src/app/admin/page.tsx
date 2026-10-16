@@ -31,7 +31,10 @@ import {
   Copy,
   CheckCheck,
   Code,
-  Database
+  Database,
+  Clock,
+  Percent,
+  Gift
 } from 'lucide-react';
 import { HOSHI_SUPABASE_SCHEMA } from '@/lib/supabase-schema-text';
 
@@ -161,13 +164,17 @@ export default function AdminPage() {
   const [promoForm, setPromoForm] = useState({
     name: '',
     description: '',
-    type: '2x1' as PromoType,
-    discount_value: 0,
-    season_tag: 'general' as SeasonCampaign,
-    badge_text: '🔥 2x1',
+    modality: 'multiplier' as 'multiplier' | 'discount_percent' | 'combo',
+    buy_qty: 2,
+    discount_value: 20,
+    visual_style: 'promo' as 'promo' | 'liquidacion',
+    badge_text: '🔥 PROMO 2x1',
     product_ids: [] as string[],
+    combo_price: 0,
+    combo_image_url: '',
     is_active: true
   });
+  const [promoProductSearch, setPromoProductSearch] = useState('');
 
   // Store Settings Form state (for explicit Save button when edited)
   const [settingsForm, setSettingsForm] = useState(settings);
@@ -209,14 +216,18 @@ export default function AdminPage() {
     }
   };
 
-  // Camera & Gallery Image Upload state
+  // Camera & Gallery Image Upload state (Products & Combo Packs)
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
   const [imageUploadMode, setImageUploadMode] = useState<'upload' | 'url'>('upload');
   const [isProcessingImage, setIsProcessingImage] = useState(false);
 
-  const processImageFile = (file: File) => {
-    setIsProcessingImage(true);
+  const comboCameraInputRef = useRef<HTMLInputElement | null>(null);
+  const comboGalleryInputRef = useRef<HTMLInputElement | null>(null);
+  const [comboImageUploadMode, setComboImageUploadMode] = useState<'upload' | 'url'>('upload');
+  const [isProcessingComboImage, setIsProcessingComboImage] = useState(false);
+
+  const optimizeImageFile = (file: File, onDone: (dataUrl: string) => void) => {
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new window.Image();
@@ -244,12 +255,27 @@ export default function AdminPage() {
         ctx?.drawImage(img, 0, 0, width, height);
 
         const optimizedDataUrl = canvas.toDataURL('image/webp', 0.82) || canvas.toDataURL('image/jpeg', 0.85);
-        setProdForm(prev => ({ ...prev, image_url: optimizedDataUrl }));
-        setIsProcessingImage(false);
+        onDone(optimizedDataUrl);
       };
       img.src = event.target?.result as string;
     };
     reader.readAsDataURL(file);
+  };
+
+  const processImageFile = (file: File) => {
+    setIsProcessingImage(true);
+    optimizeImageFile(file, (optimizedDataUrl) => {
+      setProdForm(prev => ({ ...prev, image_url: optimizedDataUrl }));
+      setIsProcessingImage(false);
+    });
+  };
+
+  const processComboImageFile = (file: File) => {
+    setIsProcessingComboImage(true);
+    optimizeImageFile(file, (optimizedDataUrl) => {
+      setPromoForm(prev => ({ ...prev, combo_image_url: optimizedDataUrl }));
+      setIsProcessingComboImage(false);
+    });
   };
 
   // Handle PIN authentication
@@ -372,31 +398,122 @@ export default function AdminPage() {
   // Promotion Modal
   const openNewPromoModal = () => {
     setEditingPromo(null);
+    setPromoProductSearch('');
     setPromoForm({
       name: '',
       description: '',
-      type: '2x1',
-      discount_value: 0,
-      season_tag: 'general',
-      badge_text: '🔥 2x1',
+      modality: 'multiplier',
+      buy_qty: 2,
+      discount_value: 20,
+      visual_style: 'promo',
+      badge_text: '🔥 PROMO 2x1',
       product_ids: [],
+      combo_price: 19.90,
+      combo_image_url: '',
       is_active: true
+    });
+    setIsPromoModalOpen(true);
+  };
+
+  const openEditPromoModal = (pr: Promotion) => {
+    setEditingPromo(pr);
+    setPromoProductSearch('');
+    const modality: 'multiplier' | 'discount_percent' | 'combo' =
+      pr.type === 'combo'
+        ? 'combo'
+        : pr.type === 'discount_percent'
+        ? 'discount_percent'
+        : 'multiplier';
+    const buyQty = pr.buy_qty
+      ? Number(pr.buy_qty)
+      : pr.type === '3x2'
+      ? 3
+      : 2;
+    const visualStyle: 'promo' | 'liquidacion' =
+      pr.visual_style === 'liquidacion' || pr.season_tag === 'vencimiento'
+        ? 'liquidacion'
+        : 'promo';
+
+    // Also include products that have promotion_id === pr.id (excluding generated combo card)
+    const linkedIds = Array.from(
+      new Set([
+        ...(pr.product_ids || []),
+        ...products
+          .filter(p => p.promotion_id === pr.id && !p.id.startsWith('combo-'))
+          .map(p => p.id)
+      ])
+    );
+
+    setPromoForm({
+      name: pr.name,
+      description: pr.description || '',
+      modality,
+      buy_qty: buyQty,
+      discount_value: pr.discount_value || 20,
+      visual_style: visualStyle,
+      badge_text: pr.badge_text,
+      product_ids: linkedIds,
+      combo_price: Number(pr.combo_price || pr.discount_value || 19.90),
+      combo_image_url: pr.combo_image_url || '',
+      is_active: pr.is_active
     });
     setIsPromoModalOpen(true);
   };
 
   const handleSavePromo = async (e: React.FormEvent) => {
     e.preventDefault();
+    const buyQty = Math.max(2, Number(promoForm.buy_qty) || 2);
+    const selectedCatalogProducts = products.filter(
+      p => !p.id.startsWith('combo-') && promoForm.product_ids.includes(p.id)
+    );
+    const normalComboSum = Number(
+      selectedCatalogProducts.reduce((sum, p) => sum + p.price, 0).toFixed(2)
+    );
+
+    const resolvedType: PromoType =
+      promoForm.modality === 'combo'
+        ? 'combo'
+        : promoForm.modality === 'discount_percent'
+        ? 'discount_percent'
+        : buyQty === 3
+        ? '3x2'
+        : '2x1';
+
+    const resolvedSeasonTag: SeasonCampaign =
+      promoForm.visual_style === 'liquidacion'
+        ? 'vencimiento'
+        : promoForm.modality === 'combo'
+        ? 'combos'
+        : 'general';
+
+    const payload: Omit<Promotion, 'id'> = {
+      name: promoForm.name.trim(),
+      description: promoForm.description.trim(),
+      type: resolvedType,
+      buy_qty: promoForm.modality === 'multiplier' ? buyQty : undefined,
+      discount_value:
+        promoForm.modality === 'combo'
+          ? Number(promoForm.combo_price) || 0
+          : promoForm.modality === 'discount_percent'
+          ? Number(promoForm.discount_value) || 0
+          : 0,
+      visual_style: promoForm.visual_style,
+      season_tag: resolvedSeasonTag,
+      badge_text: promoForm.badge_text.trim() || '🔥 PROMO',
+      product_ids: promoForm.product_ids,
+      combo_price:
+        promoForm.modality === 'combo' ? Number(promoForm.combo_price) || 0 : undefined,
+      combo_original_price:
+        promoForm.modality === 'combo' ? normalComboSum : undefined,
+      combo_image_url:
+        promoForm.modality === 'combo' ? promoForm.combo_image_url : undefined,
+      is_active: promoForm.is_active
+    };
+
     if (editingPromo) {
-      await updatePromotion(editingPromo.id, {
-        ...promoForm,
-        discount_value: Number(promoForm.discount_value)
-      });
+      await updatePromotion(editingPromo.id, payload);
     } else {
-      await addPromotion({
-        ...promoForm,
-        discount_value: Number(promoForm.discount_value)
-      });
+      await addPromotion(payload);
     }
     setIsPromoModalOpen(false);
   };
@@ -613,7 +730,7 @@ export default function AdminPage() {
             }`}
           >
             <Sparkles className="w-4 h-4" />
-            <span>Promociones (2x1, 3x2, Fechas)</span>
+            <span>Promociones ({promotions.length})</span>
           </button>
 
           <button
@@ -703,7 +820,9 @@ export default function AdminPage() {
                   </thead>
                   <tbody className="divide-y divide-[#F3EDF8]">
                     {adminFilteredProducts.map((p) => {
-                      const promo = promotions.find(pr => pr.id === p.promotion_id && pr.is_active);
+                      const promo = promotions.find(
+                        pr => pr.is_active && (pr.id === p.promotion_id || (pr.type !== 'combo' && pr.product_ids?.includes(p.id)))
+                      );
                       const stockLevel: 'available' | 'low' | 'out' = !p.in_stock || p.stock_quantity === 0
                         ? 'out'
                         : p.stock_quantity !== undefined && p.stock_quantity <= 5
@@ -733,7 +852,14 @@ export default function AdminPage() {
                               }`}
                             />
                             <div className="min-w-0">
-                              <p className={`font-bold truncate max-w-xs ${isOut ? 'text-gray-500' : 'text-[#261C30]'}`}>{p.name}</p>
+                              <div className="flex items-center gap-1.5">
+                                <p className={`font-bold truncate max-w-xs ${isOut ? 'text-gray-500' : 'text-[#261C30]'}`}>{p.name}</p>
+                                {p.id.startsWith('combo-') && (
+                                  <span className="text-[9px] font-black bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full uppercase">
+                                    Pack Combo
+                                  </span>
+                                )}
+                              </div>
                               {p.korean_name && (
                                 <p className={`text-[10px] ${isOut ? 'text-gray-400' : 'text-[#9368B7]'}`}>{p.korean_name}</p>
                               )}
@@ -810,7 +936,11 @@ export default function AdminPage() {
                           </td>
                           <td className="py-3 px-4">
                             {promo ? (
-                              <span className="inline-flex items-center gap-1 bg-purple-50 text-[#9368B7] border border-purple-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                promo.visual_style === 'liquidacion' || promo.season_tag === 'vencimiento'
+                                  ? 'bg-amber-50 text-rose-700 border border-amber-200'
+                                  : 'bg-purple-50 text-[#9368B7] border border-purple-200'
+                              }`}>
                                 <Sparkles className="w-3 h-3" />
                                 {promo.badge_text}
                               </span>
@@ -926,92 +1056,151 @@ export default function AdminPage() {
         )}
 
         {/* ======================================================== */}
-        {/* TAB 3: PROMOCIONES & FECHAS */}
+        {/* TAB 3: PROMOCIONES, OFERTAS & PACKS COMBO */}
         {/* ======================================================== */}
         {activeTab === 'promotions' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-[#EADBEE]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#EADBEE]">
               <div>
                 <h3 className="text-sm font-black text-[#261C30]">
-                  Motor de Promociones & Campañas
+                  Promociones, Ofertas Individuales y Packs Combo
                 </h3>
                 <p className="text-xs text-[#867894]">
-                  Configura ofertas 2x1, 3x2, y promociones temáticas por fechas (Halloween, Navidad, San Valentín).
+                  Crea multiplicadores (2x1, 3x2, lleva X), descuentos por producto (% OFF) o arma Packs Combo de varios productos (ej. próximos a vencer) con su propia foto.
                 </p>
               </div>
 
               <button
                 onClick={openNewPromoModal}
-                className="bg-[#9368B7] hover:bg-[#7E52A3] text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-md"
+                className="bg-[#9368B7] hover:bg-[#7E52A3] text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-md flex-shrink-0"
               >
                 <Plus className="w-4 h-4" />
-                <span>Nueva Promoción</span>
+                <span>Nueva Promoción / Pack</span>
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {promotions.map((pr) => {
-                const linkedProducts = products.filter(p => pr.product_ids?.includes(p.id) || p.promotion_id === pr.id);
+                const linkedProducts = products.filter(
+                  p => !p.id.startsWith('combo-') && (pr.product_ids?.includes(p.id) || p.promotion_id === pr.id)
+                );
+                const isLiquidacion = pr.visual_style === 'liquidacion' || pr.season_tag === 'vencimiento';
+                const buyN = pr.buy_qty ? Number(pr.buy_qty) : pr.type === '3x2' ? 3 : 2;
+                const modalityLabel =
+                  pr.type === 'combo'
+                    ? `🎁 Pack / Combo (${settings.currency_symbol} ${Number(pr.combo_price || pr.discount_value || 0).toFixed(2)})`
+                    : pr.type === 'discount_percent'
+                    ? `🏷️ Descuento Directo (-${pr.discount_value}%)`
+                    : `🔥 Multiplicador ${buyN}x${buyN - 1} (Compra ${buyN}, lleva 1 gratis)`;
+
                 return (
-                  <div key={pr.id} className="bg-white p-5 rounded-2xl border border-[#EADBEE] shadow-xs space-y-3">
-                    <div className="flex items-start justify-between">
-                      <span className="text-xs font-black px-2.5 py-1 rounded-full bg-gradient-to-r from-[#9368B7] to-[#FF6B8B] text-white">
-                        {pr.badge_text}
+                  <div key={pr.id} className="bg-white rounded-2xl border border-[#EADBEE] shadow-xs overflow-hidden flex flex-col justify-between">
+                    {/* Top Ribbon Preview matching ProductCard */}
+                    <div
+                      className={`px-4 py-2 text-[11px] font-black text-white flex items-center justify-between ${
+                        isLiquidacion
+                          ? 'bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500'
+                          : 'bg-gradient-to-r from-[#9368B7] via-[#FF6B8B] to-[#9368B7]'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5 truncate">
+                        {isLiquidacion ? (
+                          <Clock className="w-3.5 h-3.5 text-amber-200 flex-shrink-0" />
+                        ) : (
+                          <Sparkles className="w-3.5 h-3.5 text-amber-200 flex-shrink-0" />
+                        )}
+                        <span className="truncate">{pr.badge_text}</span>
                       </span>
                       <button
                         onClick={() => updatePromotion(pr.id, { is_active: !pr.is_active })}
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          pr.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-500'
+                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full transition-colors flex-shrink-0 ${
+                          pr.is_active
+                            ? 'bg-emerald-400/95 text-emerald-950'
+                            : 'bg-black/30 text-white/80'
                         }`}
                       >
-                        {pr.is_active ? 'Activa' : 'Inactiva'}
+                        {pr.is_active ? '● Activa' : '○ Inactiva'}
                       </button>
                     </div>
 
-                    <div>
-                      <h4 className="font-bold text-sm text-[#261C30]">{pr.name}</h4>
-                      <p className="text-xs text-[#6B5E78] mt-1">{pr.description}</p>
-                    </div>
+                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                      <div className="space-y-2.5">
+                        <div className="flex items-start gap-3">
+                          {pr.type === 'combo' && pr.combo_image_url && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={pr.combo_image_url}
+                              alt={pr.name}
+                              className="w-14 h-14 rounded-xl object-contain bg-[#FAF8F5] border border-[#EADBEE] p-1 flex-shrink-0"
+                            />
+                          )}
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-sm text-[#261C30] leading-snug">{pr.name}</h4>
+                            {pr.description && (
+                              <p className="text-xs text-[#6B5E78] mt-1 line-clamp-2">{pr.description}</p>
+                            )}
+                          </div>
+                        </div>
 
-                    <div className="text-[11px] text-[#867894] space-y-1 bg-[#FAF8F5] p-2.5 rounded-xl border border-[#F3EDF8]">
-                      <p>• Tipo: <strong className="text-[#261C30]">{pr.type.toUpperCase()}</strong></p>
-                      <p>• Temporada: <strong className="text-[#261C30]">{pr.season_tag}</strong></p>
-                      <p>• Productos asignados: <strong className="text-[#261C30]">{linkedProducts.length}</strong></p>
-                    </div>
+                        <div className="text-[11px] text-[#867894] space-y-1 bg-[#FAF8F5] p-2.5 rounded-xl border border-[#F3EDF8]">
+                          <p>
+                            • Modalidad: <strong className="text-[#261C30]">{modalityLabel}</strong>
+                          </p>
+                          <p>
+                            • Cinta Superior:{' '}
+                            <strong className={isLiquidacion ? 'text-rose-600' : 'text-[#9368B7]'}>
+                              {isLiquidacion ? 'Liquidación / Fecha Próxima' : 'Promoción / Oferta'}
+                            </strong>
+                          </p>
+                          <p>
+                            • Productos vinculados: <strong className="text-[#261C30]">{linkedProducts.length}</strong>
+                          </p>
+                          {linkedProducts.length > 0 && (
+                            <div className="flex flex-wrap gap-1 pt-1">
+                              {linkedProducts.slice(0, 4).map(lp => (
+                                <span
+                                  key={lp.id}
+                                  className="text-[10px] bg-white border border-[#EADBEE] text-[#544660] px-2 py-0.5 rounded-lg truncate max-w-[180px]"
+                                >
+                                  {lp.name}
+                                </span>
+                              ))}
+                              {linkedProducts.length > 4 && (
+                                <span className="text-[10px] text-[#9368B7] font-bold px-1">
+                                  +{linkedProducts.length - 4} más
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
 
-                    <div className="pt-1 flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingPromo(pr);
-                          setPromoForm({
-                            name: pr.name,
-                            description: pr.description || '',
-                            type: pr.type,
-                            discount_value: pr.discount_value || 0,
-                            season_tag: pr.season_tag,
-                            badge_text: pr.badge_text,
-                            product_ids: pr.product_ids || [],
-                            is_active: pr.is_active
-                          });
-                          setIsPromoModalOpen(true);
-                        }}
-                        className="text-xs text-[#9368B7] font-bold hover:underline"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() =>
-                          setDeleteConfirmModal({
-                            type: 'promotion',
-                            id: pr.id,
-                            name: pr.name,
-                            subtitle: 'Esta promoción dejará de aplicarse a los productos vinculados.'
-                          })
-                        }
-                        className="text-xs text-rose-500 font-bold hover:underline"
-                      >
-                        Eliminar
-                      </button>
+                      <div className="pt-2 border-t border-[#F3EDF8] flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => openEditPromoModal(pr)}
+                          className="text-xs text-[#9368B7] font-bold hover:underline flex items-center gap-1"
+                        >
+                          <Pencil className="w-3 h-3" />
+                          <span>Editar</span>
+                        </button>
+                        <button
+                          onClick={() =>
+                            setDeleteConfirmModal({
+                              type: 'promotion',
+                              id: pr.id,
+                              name: pr.name,
+                              subtitle:
+                                pr.type === 'combo'
+                                  ? 'Se eliminará este Pack Combo y su tarjeta del catálogo.'
+                                  : 'Esta promoción dejará de aplicarse a los productos vinculados.'
+                            })
+                          }
+                          className="text-xs text-rose-500 font-bold hover:underline flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Eliminar</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -1702,115 +1891,675 @@ export default function AdminPage() {
       )}
 
       {/* ======================================================== */}
-      {/* MODAL: PROMOCIÓN (NUEVA O EDITAR) */}
+      {/* MODAL: PROMOCIÓN / OFERTA / PACK COMBO (NUEVA O EDITAR) */}
       {/* ======================================================== */}
       {isPromoModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#261C30]/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-[#EADBEE] shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-[#F3EDF8] pb-3">
-              <h3 className="font-black text-base text-[#261C30]">
-                {editingPromo ? 'Editar Promoción' : 'Nueva Promoción'}
-              </h3>
-              <button onClick={() => setIsPromoModalOpen(false)}>
-                <X className="w-5 h-5 text-[#9D91A8]" />
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#261C30]/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto p-5 sm:p-6 border border-[#EADBEE] shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#F3EDF8] pb-3 sticky top-0 bg-white z-10">
+              <div>
+                <h3 className="font-black text-base text-[#261C30]">
+                  {editingPromo ? 'Editar Promoción o Pack' : 'Crear Promoción, Oferta o Pack Combo'}
+                </h3>
+                <p className="text-[11px] text-[#867894]">
+                  Elige la modalidad, el color de la cinta superior y los productos participantes.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPromoModalOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-[#FAF8F5] text-[#9D91A8] hover:text-[#261C30]"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSavePromo} className="space-y-3 text-xs">
-              <div>
-                <label className="font-bold text-[#261C30] block mb-1">Nombre de la Promoción *</label>
-                <input
-                  type="text"
-                  required
-                  value={promoForm.name}
-                  onChange={(e) => setPromoForm({ ...promoForm, name: e.target.value })}
-                  className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
-                  placeholder="Ej. Festival 2x1 Buldak"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-[#261C30] block mb-1">Tipo de Regla *</label>
-                  <select
-                    value={promoForm.type}
-                    onChange={(e) => setPromoForm({ ...promoForm, type: e.target.value as PromoType })}
-                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
+            <form onSubmit={handleSavePromo} className="space-y-4 text-xs">
+              {/* PASO 1: MODALIDAD DE PROMOCIÓN */}
+              <div className="space-y-2">
+                <label className="font-black text-[#261C30] block text-xs">
+                  1. ¿Qué tipo de promoción deseas armar? *
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const buyN = promoForm.buy_qty || 2;
+                      setPromoForm(prev => ({
+                        ...prev,
+                        modality: 'multiplier',
+                        badge_text:
+                          prev.visual_style === 'liquidacion'
+                            ? `⏳ LIQUIDACIÓN ${buyN}x${buyN - 1}`
+                            : `🔥 PROMO ${buyN}x${buyN - 1}`
+                      }));
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
+                      promoForm.modality === 'multiplier'
+                        ? 'bg-[#EFE6F7] border-[#9368B7] ring-2 ring-[#9368B7]/30 shadow-xs'
+                        : 'bg-[#FAF8F5] border-[#EADBEE] hover:bg-white'
+                    }`}
                   >
-                    <option value="2x1">2x1 (Lleva 2 paga 1)</option>
-                    <option value="3x2">3x2 (Lleva 3 paga 2)</option>
-                    <option value="discount_percent">% Descuento Directo</option>
-                    <option value="combo">Combo Pack</option>
-                  </select>
-                </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-[#261C30] flex items-center gap-1.5">
+                        <Flame className="w-4 h-4 text-rose-500" />
+                        <span>2x1 / 3x2 / Lleva X</span>
+                      </span>
+                      {promoForm.modality === 'multiplier' && (
+                        <Check className="w-4 h-4 text-[#9368B7]" />
+                      )}
+                    </div>
+                    <span className="text-[10px] text-[#6B5E78] leading-snug">
+                      Mismo producto: por la compra de X unidades, lleva 1 gratis.
+                    </span>
+                  </button>
 
-                <div>
-                  <label className="font-bold text-[#261C30] block mb-1">Temporada / Fecha</label>
-                  <select
-                    value={promoForm.season_tag}
-                    onChange={(e) => setPromoForm({ ...promoForm, season_tag: e.target.value as SeasonCampaign })}
-                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const pct = promoForm.discount_value || 20;
+                      setPromoForm(prev => ({
+                        ...prev,
+                        modality: 'discount_percent',
+                        badge_text:
+                          prev.visual_style === 'liquidacion'
+                            ? `⏳ LIQUIDACIÓN -${pct}%`
+                            : `🔥 OFERTA -${pct}%`
+                      }));
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
+                      promoForm.modality === 'discount_percent'
+                        ? 'bg-[#EFE6F7] border-[#9368B7] ring-2 ring-[#9368B7]/30 shadow-xs'
+                        : 'bg-[#FAF8F5] border-[#EADBEE] hover:bg-white'
+                    }`}
                   >
-                    <option value="general">General / Regular</option>
-                    <option value="vencimiento">Liquidación por Fecha Próxima</option>
-                    <option value="halloween">Especial Halloween</option>
-                    <option value="navidad">Especial Navidad</option>
-                    <option value="san_valentin">San Valentín</option>
-                    <option value="verano">Temporada Verano</option>
-                    <option value="aniversario">Aniversario Hoshi</option>
-                  </select>
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-[#261C30] flex items-center gap-1.5">
+                        <Percent className="w-4 h-4 text-[#9368B7]" />
+                        <span>Oferta Individual (% OFF)</span>
+                      </span>
+                      {promoForm.modality === 'discount_percent' && (
+                        <Check className="w-4 h-4 text-[#9368B7]" />
+                      )}
+                    </div>
+                    <span className="text-[10px] text-[#6B5E78] leading-snug">
+                      Rebaja un porcentaje directo al producto con precio anterior tachado.
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPromoForm(prev => ({
+                        ...prev,
+                        modality: 'combo',
+                        badge_text:
+                          prev.visual_style === 'liquidacion'
+                            ? '⏳ PACK LIQUIDACIÓN'
+                            : '🎁 PACK COMBO'
+                      }));
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
+                      promoForm.modality === 'combo'
+                        ? 'bg-[#EFE6F7] border-[#9368B7] ring-2 ring-[#9368B7]/30 shadow-xs'
+                        : 'bg-[#FAF8F5] border-[#EADBEE] hover:bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-[#261C30] flex items-center gap-1.5">
+                        <Gift className="w-4 h-4 text-amber-600" />
+                        <span>Pack / Combo</span>
+                      </span>
+                      {promoForm.modality === 'combo' && (
+                        <Check className="w-4 h-4 text-[#9368B7]" />
+                      )}
+                    </div>
+                    <span className="text-[10px] text-[#6B5E78] leading-snug">
+                      Une 2, 3 o más productos distintos en un Pack con foto y precio especial.
+                    </span>
+                  </button>
                 </div>
               </div>
 
-              <div>
-                <label className="font-bold text-[#261C30] block mb-1">Texto del Badge en la Foto *</label>
-                <input
-                  type="text"
-                  required
-                  value={promoForm.badge_text}
-                  onChange={(e) => setPromoForm({ ...promoForm, badge_text: e.target.value })}
-                  className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
-                  placeholder="Ej. PROMO 2x1 o LIQUIDACIÓN"
-                />
+              {/* PASO 2: ESTILO DE LA CINTA SUPERIOR (CONSERVANDO LOS COLORES DE PROMO Y LIQUIDACIÓN) */}
+              <div className="space-y-2">
+                <label className="font-black text-[#261C30] block text-xs">
+                  2. Color de la Cinta Superior en la Tarjeta *
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextBadge =
+                        promoForm.modality === 'combo'
+                          ? '🎁 PACK COMBO'
+                          : promoForm.modality === 'discount_percent'
+                          ? `🔥 OFERTA -${promoForm.discount_value || 20}%`
+                          : `🔥 PROMO ${promoForm.buy_qty}x${promoForm.buy_qty - 1}`;
+                      setPromoForm(prev => ({
+                        ...prev,
+                        visual_style: 'promo',
+                        badge_text: prev.badge_text.startsWith('⏳') ? nextBadge : prev.badge_text
+                      }));
+                    }}
+                    className={`p-2.5 rounded-2xl border text-left transition-all space-y-1.5 ${
+                      promoForm.visual_style === 'promo'
+                        ? 'border-[#9368B7] ring-2 ring-[#9368B7]/30 bg-[#FAF4FC]'
+                        : 'border-[#EADBEE] bg-[#FAF8F5] opacity-75 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="rounded-xl px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-[#9368B7] via-[#FF6B8B] to-[#9368B7] flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                        <span>{promoForm.badge_text || '🔥 PROMO'}</span>
+                      </span>
+                      <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded-full">OFERTA</span>
+                    </div>
+                    <p className="text-[10px] text-[#544660] font-semibold px-1">
+                      💜💗 Estilo Promoción / Oferta (Morado y Rosa)
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextBadge =
+                        promoForm.modality === 'combo'
+                          ? '⏳ PACK LIQUIDACIÓN'
+                          : promoForm.modality === 'discount_percent'
+                          ? `⏳ LIQUIDACIÓN -${promoForm.discount_value || 20}%`
+                          : `⏳ LIQUIDACIÓN ${promoForm.buy_qty}x${promoForm.buy_qty - 1}`;
+                      setPromoForm(prev => ({
+                        ...prev,
+                        visual_style: 'liquidacion',
+                        badge_text:
+                          prev.badge_text.startsWith('🔥') || prev.badge_text.startsWith('🎁')
+                            ? nextBadge
+                            : prev.badge_text
+                      }));
+                    }}
+                    className={`p-2.5 rounded-2xl border text-left transition-all space-y-1.5 ${
+                      promoForm.visual_style === 'liquidacion'
+                        ? 'border-amber-500 ring-2 ring-amber-400/30 bg-amber-50/40'
+                        : 'border-[#EADBEE] bg-[#FAF8F5] opacity-75 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="rounded-xl px-3 py-1.5 text-[11px] font-black text-white bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-amber-200" />
+                        <span>{promoForm.badge_text || '⏳ LIQUIDACIÓN'}</span>
+                      </span>
+                      <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded-full">LIQUIDACIÓN</span>
+                    </div>
+                    <p className="text-[10px] text-[#544660] font-semibold px-1">
+                      🟠🔴 Estilo Liquidación / Fecha Próxima (Ámbar y Rojo)
+                    </p>
+                  </button>
+                </div>
               </div>
 
-              {promoForm.type === 'discount_percent' && (
+              {/* PASO 3: REGLA DINÁMICA SEGÚN LA MODALIDAD */}
+              <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#EADBEE] space-y-3">
+                {promoForm.modality === 'multiplier' && (
+                  <div className="space-y-2.5">
+                    <label className="font-black text-[#261C30] block">
+                      3. Regla de Cantidad (Mismo Producto) *
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { qty: 2, label: '2x1 (Compra 2, paga 1)' },
+                        { qty: 3, label: '3x2 (Compra 3, paga 2)' },
+                        { qty: 4, label: '4x3 (Compra 4, paga 3)' }
+                      ].map(opt => (
+                        <button
+                          key={opt.qty}
+                          type="button"
+                          onClick={() =>
+                            setPromoForm(prev => ({
+                              ...prev,
+                              buy_qty: opt.qty,
+                              badge_text:
+                                prev.visual_style === 'liquidacion'
+                                  ? `⏳ LIQUIDACIÓN ${opt.qty}x${opt.qty - 1}`
+                                  : `🔥 PROMO ${opt.qty}x${opt.qty - 1}`
+                            }))
+                          }
+                          className={`py-2 px-2.5 rounded-xl font-bold text-xs border transition-all ${
+                            promoForm.buy_qty === opt.qty
+                              ? 'bg-[#9368B7] text-white border-[#9368B7] shadow-xs'
+                              : 'bg-white text-[#544660] border-[#EADBEE] hover:bg-[#EFE6F7]'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 pt-1 bg-white p-2.5 rounded-xl border border-[#EADBEE]">
+                      <span className="text-[#544660] font-semibold">
+                        O personalizado: Por la compra de
+                      </span>
+                      <input
+                        type="number"
+                        min={2}
+                        max={20}
+                        value={promoForm.buy_qty}
+                        onChange={(e) => {
+                          const val = Math.max(2, parseInt(e.target.value, 10) || 2);
+                          setPromoForm(prev => ({
+                            ...prev,
+                            buy_qty: val,
+                            badge_text:
+                              prev.visual_style === 'liquidacion'
+                                ? `⏳ LIQUIDACIÓN ${val}x${val - 1}`
+                                : `🔥 PROMO ${val}x${val - 1}`
+                          }));
+                        }}
+                        className="w-16 text-center font-black text-sm bg-[#FAF8F5] border border-[#D8C3E5] rounded-lg py-1 text-[#9368B7]"
+                      />
+                      <span className="text-[#544660] font-semibold">
+                        unidades, lleva <strong>1 GRATIS</strong> (paga {Math.max(1, promoForm.buy_qty - 1)}).
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {promoForm.modality === 'discount_percent' && (
+                  <div className="space-y-2.5">
+                    <label className="font-black text-[#261C30] block">
+                      3. Porcentaje de Descuento Directo (% OFF) *
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {[10, 15, 20, 25, 30, 40, 50].map(pct => (
+                        <button
+                          key={pct}
+                          type="button"
+                          onClick={() =>
+                            setPromoForm(prev => ({
+                              ...prev,
+                              discount_value: pct,
+                              badge_text:
+                                prev.visual_style === 'liquidacion'
+                                  ? `⏳ LIQUIDACIÓN -${pct}%`
+                                  : `🔥 OFERTA -${pct}%`
+                            }))
+                          }
+                          className={`px-3 py-1.5 rounded-xl font-bold text-xs border transition-all ${
+                            promoForm.discount_value === pct
+                              ? 'bg-[#9368B7] text-white border-[#9368B7]'
+                              : 'bg-white text-[#544660] border-[#EADBEE] hover:bg-[#EFE6F7]'
+                          }`}
+                        >
+                          -{pct}% OFF
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-[#544660] font-semibold">Otro porcentaje:</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={95}
+                        value={promoForm.discount_value}
+                        onChange={(e) => {
+                          const val = Math.min(95, Math.max(1, parseFloat(e.target.value) || 0));
+                          setPromoForm(prev => ({
+                            ...prev,
+                            discount_value: val,
+                            badge_text:
+                              prev.visual_style === 'liquidacion'
+                                ? `⏳ LIQUIDACIÓN -${val}%`
+                                : `🔥 OFERTA -${val}%`
+                          }));
+                        }}
+                        className="w-24 bg-white p-2 rounded-xl border border-[#EADBEE] font-black text-center text-[#9368B7]"
+                      />
+                      <span className="text-[#867894]">% de descuento sobre el precio normal</span>
+                    </div>
+                  </div>
+                )}
+
+                {promoForm.modality === 'combo' && (
+                  <div className="space-y-3">
+                    <label className="font-black text-[#261C30] block">
+                      3. Configuración del Pack / Combo (Precio y Foto del Pack) *
+                    </label>
+
+                    {/* Resumen de precios del Pack Combo */}
+                    {(() => {
+                      const selectedProds = products.filter(
+                        p => !p.id.startsWith('combo-') && promoForm.product_ids.includes(p.id)
+                      );
+                      const normalTotal = selectedProds.reduce((sum, p) => sum + p.price, 0);
+                      const savings = Math.max(0, normalTotal - (Number(promoForm.combo_price) || 0));
+
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-3 rounded-2xl border border-[#EADBEE]">
+                          <div>
+                            <span className="text-[10px] font-bold text-[#867894] uppercase block">
+                              Suma Normal ({selectedProds.length} prod. seleccionados)
+                            </span>
+                            <span className="text-lg font-black text-[#6B5E78] line-through">
+                              {settings.currency_symbol} {normalTotal.toFixed(2)}
+                            </span>
+                            {savings > 0 && (
+                              <span className="block text-[11px] font-bold text-emerald-600 mt-0.5">
+                                ✨ El cliente ahorra {settings.currency_symbol} {savings.toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-[#261C30] block mb-1">
+                              Precio Especial del Pack Combo (S/.) *
+                            </label>
+                            <input
+                              type="number"
+                              step="0.10"
+                              required
+                              value={promoForm.combo_price}
+                              onChange={(e) =>
+                                setPromoForm(prev => ({
+                                  ...prev,
+                                  combo_price: parseFloat(e.target.value) || 0
+                                }))
+                              }
+                              className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#9368B7] font-black text-sm text-[#261C30]"
+                              placeholder="Ej. 19.90"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Subir Foto del Pack Combo (Cámara o Galería) */}
+                    <div className="space-y-2 bg-white p-3 rounded-2xl border border-[#EADBEE]">
+                      <div className="flex items-center justify-between">
+                        <label className="font-bold text-[#261C30] block">
+                          📸 Foto del Pack / Combo (ej. los 3 productos juntos)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setComboImageUploadMode(comboImageUploadMode === 'upload' ? 'url' : 'upload')
+                          }
+                          className="text-[11px] text-[#9368B7] hover:underline font-bold"
+                        >
+                          {comboImageUploadMode === 'upload'
+                            ? '🔗 Usar enlace URL'
+                            : '📁 Subir foto o usar cámara'}
+                        </button>
+                      </div>
+
+                      <input
+                        ref={comboCameraInputRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={(e) =>
+                          e.target.files?.[0] && processComboImageFile(e.target.files[0])
+                        }
+                      />
+                      <input
+                        ref={comboGalleryInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) =>
+                          e.target.files?.[0] && processComboImageFile(e.target.files[0])
+                        }
+                      />
+
+                      {comboImageUploadMode === 'upload' ? (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => comboCameraInputRef.current?.click()}
+                              className="flex items-center justify-center gap-1.5 p-2.5 bg-[#FAF8F5] hover:bg-[#EFE6F7] text-[#9368B7] font-bold rounded-xl border border-[#D8C3E5] transition-colors"
+                            >
+                              <Camera className="w-4 h-4" />
+                              <span>Tomar Foto (Cámara)</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => comboGalleryInputRef.current?.click()}
+                              className="flex items-center justify-center gap-1.5 p-2.5 bg-[#FAF8F5] hover:bg-[#EFE6F7] text-[#9368B7] font-bold rounded-xl border border-[#D8C3E5] transition-colors"
+                            >
+                              <ImageIcon className="w-4 h-4" />
+                              <span>Galería o Archivos</span>
+                            </button>
+                          </div>
+
+                          {isProcessingComboImage && (
+                            <p className="text-center text-xs text-[#9368B7] font-bold flex items-center justify-center gap-1.5 py-1">
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              Optimizando foto del Pack Combo...
+                            </p>
+                          )}
+
+                          {promoForm.combo_image_url && (
+                            <div className="flex items-center gap-3 p-2 bg-[#FAF8F5] rounded-xl border border-[#EADBEE]">
+                              <div className="w-14 h-14 bg-white rounded-lg p-1 border border-[#F3EDF8] flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={promoForm.combo_image_url}
+                                  alt="Foto del Pack Combo"
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0 text-[11px]">
+                                <p className="font-bold text-emerald-700 flex items-center gap-1">
+                                  <Check className="w-3.5 h-3.5" />
+                                  Foto del Pack lista para el catálogo
+                                </p>
+                                <p className="text-[#867894] truncate">
+                                  Se mostrará como producto comprable en la tienda
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setPromoForm(prev => ({ ...prev, combo_image_url: '' }))}
+                                className="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg"
+                                title="Quitar foto"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <input
+                          type="url"
+                          value={promoForm.combo_image_url}
+                          onChange={(e) =>
+                            setPromoForm(prev => ({ ...prev, combo_image_url: e.target.value }))
+                          }
+                          className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
+                          placeholder="https://ejemplo.com/foto-combo.jpg"
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* PASO 4: NOMBRE, TEXTO DEL BADGE Y DESCRIPCIÓN */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-[#261C30] block mb-1">% de Descuento</label>
+                  <label className="font-bold text-[#261C30] block mb-1">
+                    {promoForm.modality === 'combo'
+                      ? 'Nombre del Pack / Combo *'
+                      : 'Nombre de la Promoción *'}
+                  </label>
                   <input
-                    type="number"
-                    value={promoForm.discount_value}
-                    onChange={(e) => setPromoForm({ ...promoForm, discount_value: parseFloat(e.target.value) || 0 })}
-                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
-                    placeholder="20"
+                    type="text"
+                    required
+                    value={promoForm.name}
+                    onChange={(e) => setPromoForm({ ...promoForm, name: e.target.value })}
+                    className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE]"
+                    placeholder={
+                      promoForm.modality === 'combo'
+                        ? 'Ej. Pack K-Snack x3 Liquidación'
+                        : 'Ej. Festival 2x1 Ramen Buldak'
+                    }
                   />
                 </div>
-              )}
+
+                <div>
+                  <label className="font-bold text-[#261C30] block mb-1">
+                    Texto corto en la Cinta Superior *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={promoForm.badge_text}
+                    onChange={(e) => setPromoForm({ ...promoForm, badge_text: e.target.value })}
+                    className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] font-bold"
+                    placeholder="Ej. 🔥 PROMO 2x1 o ⏳ LIQUIDACIÓN"
+                  />
+                </div>
+              </div>
 
               <div>
-                <label className="font-bold text-[#261C30] block mb-1">Descripción / Regla para el cliente</label>
+                <label className="font-bold text-[#261C30] block mb-1">
+                  Descripción / Detalle para el cliente
+                </label>
                 <textarea
                   rows={2}
                   value={promoForm.description}
                   onChange={(e) => setPromoForm({ ...promoForm, description: e.target.value })}
-                  className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE] resize-none"
-                  placeholder="Ej. Aplica en todas las variedades seleccionadas..."
+                  className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] resize-none"
+                  placeholder={
+                    promoForm.modality === 'combo'
+                      ? 'Ej. Llévate estos 3 productos coreanos a un súper precio especial por fecha próxima...'
+                      : 'Ej. Aplica agregando las unidades al carrito de compras...'
+                  }
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2">
+              {/* PASO 5: SELECCIONAR PRODUCTOS DEL CATÁLOGO */}
+              <div className="space-y-2 p-3.5 bg-[#FAF8F5] rounded-2xl border border-[#EADBEE]">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <label className="font-black text-[#261C30] block">
+                      {promoForm.modality === 'combo'
+                        ? '4. Selecciona los productos que integran este Pack Combo'
+                        : '4. Selecciona los productos donde aplica esta promoción'}
+                    </label>
+                    <p className="text-[10px] text-[#867894]">
+                      {promoForm.product_ids.length === 0
+                        ? 'Ningún producto seleccionado aún.'
+                        : `${promoForm.product_ids.length} ${
+                            promoForm.product_ids.length === 1
+                              ? 'producto seleccionado'
+                              : 'productos seleccionados'
+                          }`}
+                    </p>
+                  </div>
+
+                  {promoForm.product_ids.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setPromoForm(prev => ({ ...prev, product_ids: [] }))}
+                      className="text-[10px] text-rose-500 font-bold hover:underline"
+                    >
+                      Limpiar selección
+                    </button>
+                  )}
+                </div>
+
+                {/* Buscador de productos dentro del modal */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Buscar producto por nombre o SKU..."
+                    value={promoProductSearch}
+                    onChange={(e) => setPromoProductSearch(e.target.value)}
+                    className="w-full bg-white pl-8 pr-3 py-2 rounded-xl border border-[#EADBEE] text-xs"
+                  />
+                  <Search className="w-3.5 h-3.5 text-[#9D91A8] absolute left-2.5 top-2.5" />
+                </div>
+
+                {/* Lista de productos seleccionables */}
+                <div className="max-h-48 overflow-y-auto divide-y divide-[#F3EDF8] bg-white rounded-xl border border-[#EADBEE]">
+                  {products
+                    .filter(p => !p.id.startsWith('combo-'))
+                    .filter(p => {
+                      if (!promoProductSearch.trim()) return true;
+                      const q = promoProductSearch.toLowerCase();
+                      return (
+                        p.name.toLowerCase().includes(q) ||
+                        (p.code && p.code.toLowerCase().includes(q)) ||
+                        (p.category_name && p.category_name.toLowerCase().includes(q))
+                      );
+                    })
+                    .map(prod => {
+                      const isChecked = promoForm.product_ids.includes(prod.id);
+                      return (
+                        <label
+                          key={prod.id}
+                          className={`flex items-center justify-between gap-3 p-2.5 cursor-pointer transition-colors ${
+                            isChecked ? 'bg-[#EFE6F7]/60' : 'hover:bg-[#FAF8F5]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                setPromoForm(prev => {
+                                  const nextIds = isChecked
+                                    ? prev.product_ids.filter(id => id !== prod.id)
+                                    : [...prev.product_ids, prod.id];
+                                  return { ...prev, product_ids: nextIds };
+                                });
+                              }}
+                              className="w-4 h-4 accent-[#9368B7] rounded cursor-pointer flex-shrink-0"
+                            />
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={prod.image_url}
+                              alt={prod.name}
+                              className="w-8 h-8 rounded-lg object-contain bg-[#FAF8F5] border border-[#EADBEE] p-0.5 flex-shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <p className="font-bold text-xs text-[#261C30] truncate">
+                                {prod.name}
+                              </p>
+                              <p className="text-[10px] text-[#867894]">
+                                {prod.category_name} • {settings.currency_symbol} {prod.price.toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+
+                          {isChecked && (
+                            <span className="text-[10px] font-bold text-[#9368B7] bg-white px-2 py-0.5 rounded-full border border-[#D8C3E5] flex-shrink-0">
+                              Incluido
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 sticky bottom-0 bg-white py-2 border-t border-[#F3EDF8]">
                 <button
                   type="button"
                   onClick={() => setIsPromoModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-[#EADBEE] text-[#6B5E78]"
+                  className="px-4 py-2.5 rounded-xl border border-[#EADBEE] text-[#6B5E78] font-bold"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#9368B7] text-white px-5 py-2 rounded-xl font-bold shadow-md"
+                  className="bg-[#9368B7] hover:bg-[#7E52A3] text-white px-6 py-2.5 rounded-xl font-bold shadow-md flex items-center gap-1.5"
                 >
-                  Guardar Promoción
+                  <Check className="w-4 h-4" />
+                  <span>{editingPromo ? 'Guardar Cambios' : 'Crear Promoción'}</span>
                 </button>
               </div>
             </form>

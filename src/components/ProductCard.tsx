@@ -15,10 +15,44 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
   const { addToCart, promotions, settings } = useStore();
   const [justAdded, setJustAdded] = useState(false);
 
-  // Find linked promotion
-  const promotion: Promotion | undefined = product.promotion_id 
-    ? promotions.find(p => p.id === product.promotion_id && p.is_active)
-    : undefined;
+  // Find linked promotion (either assigned via promotion_id or included in a non-combo promotion's product_ids)
+  const promotion: Promotion | undefined = promotions.find(
+    p =>
+      p.is_active &&
+      (p.id === product.promotion_id ||
+        (p.type !== 'combo' && p.product_ids?.includes(product.id)))
+  );
+
+  const isLiquidacionStyle = Boolean(
+    promotion &&
+      (promotion.visual_style === 'liquidacion' ||
+        promotion.season_tag === 'vencimiento' ||
+        promotion.season_tag === 'liquidacion')
+  );
+
+  const buyN =
+    promotion && (promotion.type === '2x1' || promotion.type === '3x2')
+      ? promotion.buy_qty && promotion.buy_qty >= 2
+        ? promotion.buy_qty
+        : promotion.type === '3x2'
+        ? 3
+        : 2
+      : 2;
+
+  const hasPercentDiscount =
+    promotion &&
+    promotion.type === 'discount_percent' &&
+    promotion.discount_value &&
+    promotion.discount_value > 0 &&
+    !product.id.startsWith('combo-');
+
+  const displayPrice = hasPercentDiscount
+    ? product.price * (1 - (promotion?.discount_value || 0) / 100)
+    : product.price;
+
+  const displayOriginalPrice = hasPercentDiscount
+    ? product.price
+    : product.original_price;
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -80,12 +114,12 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
           </div>
         ) : promotion ? (
           <div className={`w-full h-full text-white px-3 flex items-center justify-between text-xs font-black tracking-wide shadow-sm animate-pulse-subtle ${
-            promotion.season_tag === 'vencimiento'
+            isLiquidacionStyle
               ? 'bg-gradient-to-r from-amber-600 via-rose-600 to-amber-700'
               : 'bg-gradient-to-r from-[#9368B7] via-[#FF6B8B] to-[#9368B7]'
           }`}>
             <div className="flex items-center gap-1.5 truncate">
-              {promotion.season_tag === 'vencimiento' ? (
+              {isLiquidacionStyle ? (
                 <Clock className="w-3 h-3 text-amber-200 flex-shrink-0" />
               ) : (
                 <Star className="w-3 h-3 text-amber-300 fill-amber-300 flex-shrink-0 animate-spin" style={{ animationDuration: '6s' }} />
@@ -95,7 +129,11 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
               </span>
             </div>
             <span className="text-[9px] bg-white/20 backdrop-blur-xs px-1.5 py-0.2 rounded-full uppercase flex-shrink-0 font-bold">
-              {promotion.type.toUpperCase()}
+              {promotion.type === '2x1' || promotion.type === '3x2'
+                ? `${buyN}X${buyN - 1}`
+                : promotion.type === 'discount_percent'
+                ? `-${promotion.discount_value}%`
+                : 'PACK'}
             </span>
           </div>
         ) : product.is_featured ? (
@@ -156,16 +194,22 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
         {promotion && !isOut && (
           <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
             <span className={`inline-flex items-center gap-1 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-black shadow-md border ${
-              promotion.season_tag === 'vencimiento'
+              isLiquidacionStyle
                 ? 'text-amber-700 border-amber-300'
                 : 'text-[#FF6B8B] border-[#FF6B8B]/20'
             }`}>
-              {promotion.season_tag === 'vencimiento' ? (
+              {isLiquidacionStyle ? (
                 <Clock className="w-3 h-3 text-amber-600" />
+              ) : promotion.type === 'combo' ? (
+                <Gift className="w-3 h-3 text-[#9368B7]" />
               ) : (
                 <Flame className="w-3 h-3 fill-rose-500 text-rose-500" />
               )}
-              {promotion.type === '2x1' ? 'Lleva 2 Paga 1' : promotion.type === '3x2' ? 'Lleva 3 Paga 2' : 'Oferta'}
+              {promotion.type === '2x1' || promotion.type === '3x2'
+                ? `Lleva ${buyN} Paga ${buyN - 1}`
+                : promotion.type === 'discount_percent'
+                ? `Oferta -${promotion.discount_value}%`
+                : 'Pack Combo'}
             </span>
           </div>
         )}
@@ -220,11 +264,11 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
           <div>
             <div className="flex items-baseline gap-1.5">
               <span className={`text-base sm:text-lg font-black ${isOut ? 'text-gray-400' : 'text-[#261C30]'}`}>
-                {settings.currency_symbol} {product.price.toFixed(2)}
+                {settings.currency_symbol} {displayPrice.toFixed(2)}
               </span>
-              {product.original_price && product.original_price > product.price && (
+              {displayOriginalPrice && displayOriginalPrice > displayPrice && (
                 <span className="text-[10px] text-[#9D91A8] line-through font-semibold">
-                  {settings.currency_symbol} {product.original_price.toFixed(2)}
+                  {settings.currency_symbol} {displayOriginalPrice.toFixed(2)}
                 </span>
               )}
             </div>

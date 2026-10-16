@@ -57,14 +57,18 @@ export default function Home() {
 
       // 3. Seasonal Campaign & Promo Filter
       if (selectedSeason !== 'todos') {
-        const promo = promotions.find(p => p.id === product.promotion_id && p.is_active);
-        if (!promo) return false;
+        const promo = promotions.find(p => (p.id === product.promotion_id || p.product_ids?.includes(product.id)) && p.is_active);
+        const isComboProduct = product.id.startsWith('combo-');
 
         if (selectedSeason === 'general') {
-          // Any active promotion
-          return true;
+          return Boolean(promo) || isComboProduct;
+        } else if (selectedSeason === 'vencimiento') {
+          if (!promo) return false;
+          return promo.visual_style === 'liquidacion' || promo.season_tag === 'vencimiento' || promo.season_tag === 'liquidacion';
+        } else if (selectedSeason === 'combos') {
+          return isComboProduct || (Boolean(promo) && promo?.type === 'combo');
         } else {
-          // Specific season (halloween, navidad, san_valentin, etc.)
+          if (!promo) return false;
           return promo.season_tag === selectedSeason;
         }
       }
@@ -128,7 +132,13 @@ export default function Home() {
               <span>{currentCategoryObj ? `${currentCategoryObj.icon} ${currentCategoryObj.name}` : 'Todo el Catálogo'}</span>
               {selectedSeason !== 'todos' && (
                 <span className="text-xs font-bold bg-[#9368B7] text-white px-2.5 py-0.5 rounded-full">
-                  {selectedSeason === 'vencimiento' ? 'Fecha Próxima' : selectedSeason === 'general' ? 'Promociones 2x1 y 3x2' : selectedSeason.toUpperCase()}
+                  {selectedSeason === 'vencimiento'
+                    ? 'Liquidación / Fecha Próxima'
+                    : selectedSeason === 'combos'
+                    ? 'Packs & Combos'
+                    : selectedSeason === 'general'
+                    ? 'Promociones'
+                    : selectedSeason.toUpperCase()}
                 </span>
               )}
             </h3>

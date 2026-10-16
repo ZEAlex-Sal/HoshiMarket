@@ -3,7 +3,7 @@
 import React from 'react';
 import { useStore } from '@/context/store-context';
 import { SeasonCampaign } from '@/types';
-import { Flame, Sparkles, Heart, Ghost, Trees, Layers, Clock } from 'lucide-react';
+import { Flame, Sparkles, Layers, Clock, Gift } from 'lucide-react';
 
 export default function CategoryFilter() {
   const { 
@@ -19,11 +19,9 @@ export default function CategoryFilter() {
 
   const seasonalFilters: Array<{ id: SeasonCampaign; label: string; icon: React.ReactNode; color: string }> = [
     { id: 'todos', label: 'Todo el Catálogo', icon: <Layers className="w-3.5 h-3.5 text-[#9368B7]" />, color: 'hover:border-[#9368B7]' },
-    { id: 'general', label: 'Promos 2x1 & 3x2', icon: <Flame className="w-3.5 h-3.5 text-rose-500" />, color: 'hover:border-rose-400' },
-    { id: 'vencimiento', label: 'Ofertas por Fecha Próxima', icon: <Clock className="w-3.5 h-3.5 text-amber-500" />, color: 'hover:border-amber-400' },
-    { id: 'halloween', label: 'Especial Halloween', icon: <Ghost className="w-3.5 h-3.5 text-orange-500" />, color: 'hover:border-orange-400' },
-    { id: 'san_valentin', label: 'San Valentín', icon: <Heart className="w-3.5 h-3.5 text-pink-500" />, color: 'hover:border-pink-400' },
-    { id: 'navidad', label: 'Navidad Coreana', icon: <Trees className="w-3.5 h-3.5 text-emerald-600" />, color: 'hover:border-emerald-400' },
+    { id: 'general', label: 'Promociones', icon: <Flame className="w-3.5 h-3.5 text-rose-500" />, color: 'hover:border-rose-400' },
+    { id: 'vencimiento', label: 'Liquidación / Fecha Próxima', icon: <Clock className="w-3.5 h-3.5 text-amber-500" />, color: 'hover:border-amber-400' },
+    { id: 'combos', label: 'Packs & Combos', icon: <Gift className="w-3.5 h-3.5 text-purple-600" />, color: 'hover:border-purple-400' },
   ];
 
   return (
@@ -32,7 +30,7 @@ export default function CategoryFilter() {
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         <span className="text-xs font-bold text-[#6B5E78] uppercase tracking-wider flex items-center gap-1 flex-shrink-0">
           <Sparkles className="w-3.5 h-3.5 text-[#9368B7]" />
-          Campañas:
+          Filtrar por:
         </span>
         <div className="flex items-center gap-1.5 flex-nowrap">
           {seasonalFilters.map((season) => {

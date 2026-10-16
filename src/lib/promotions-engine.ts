@@ -9,6 +9,19 @@ export function calculateCartItemTotals(product: Product, quantity: number, prom
   const unitPrice = product.price;
   const subtotal = unitPrice * quantity;
 
+  // If this is a standalone Pack/Combo card, its price is already the special pack price
+  if (product.id.startsWith('combo-')) {
+    const origPrice = product.original_price && product.original_price > unitPrice ? product.original_price : unitPrice;
+    const origSubtotal = origPrice * quantity;
+    const packSavings = Math.max(0, origSubtotal - subtotal);
+    return {
+      subtotal: origSubtotal,
+      discount_amount: packSavings,
+      final_subtotal: subtotal,
+      promoDescription: packSavings > 0 ? '¡Precio especial de Pack Combo aplicado!' : undefined
+    };
+  }
+
   if (!promotion || !promotion.is_active) {
     return {
       subtotal,
@@ -21,22 +34,17 @@ export function calculateCartItemTotals(product: Product, quantity: number, prom
   let promoDescription = '';
 
   switch (promotion.type) {
-    case '2x1': {
-      // Lleva 2 y paga 1 (cada par bonifica 1 unidad)
-      const freeUnits = Math.floor(quantity / 2);
-      if (freeUnits > 0) {
-        discount_amount = freeUnits * unitPrice;
-        promoDescription = `¡Promo 2x1 aplicada! ${freeUnits} ${freeUnits === 1 ? 'unidad gratis' : 'unidades gratis'}`;
-      }
-      break;
-    }
-
+    case '2x1':
     case '3x2': {
-      // Lleva 3 y paga 2 (cada trío bonifica 1 unidad)
-      const freeUnits = Math.floor(quantity / 3);
+      const buyN = promotion.buy_qty && promotion.buy_qty >= 2
+        ? promotion.buy_qty
+        : promotion.type === '3x2'
+        ? 3
+        : 2;
+      const freeUnits = Math.floor(quantity / buyN);
       if (freeUnits > 0) {
         discount_amount = freeUnits * unitPrice;
-        promoDescription = `¡Promo 3x2 aplicada! ${freeUnits} ${freeUnits === 1 ? 'unidad gratis' : 'unidades gratis'}`;
+        promoDescription = `¡Promo ${buyN}x${buyN - 1} aplicada! ${freeUnits} ${freeUnits === 1 ? 'unidad gratis' : 'unidades gratis'}`;
       }
       break;
     }
@@ -52,9 +60,9 @@ export function calculateCartItemTotals(product: Product, quantity: number, prom
 
     case 'combo':
     case 'fixed_price': {
-      if (promotion.discount_value && promotion.discount_value > 0) {
+      if (promotion.discount_value && promotion.discount_value > 0 && !product.id.startsWith('combo-')) {
         discount_amount = Math.min(subtotal, promotion.discount_value * quantity);
-        promoDescription = `¡Precio especial de combo aplicado!`;
+        promoDescription = `¡Descuento especial aplicado!`;
       }
       break;
     }

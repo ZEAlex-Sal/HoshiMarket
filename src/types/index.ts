@@ -5,6 +5,7 @@ export type SeasonCampaign =
   | 'general'
   | 'vencimiento'
   | 'liquidacion'
+  | 'combos'
   | 'halloween'
   | 'navidad'
   | 'san_valentin'
@@ -16,10 +17,15 @@ export interface Promotion {
   name: string;
   description?: string;
   type: PromoType;
-  discount_value?: number; // e.g. 20 for 20%
+  discount_value?: number; // e.g. 20 for 20% or combo price
+  buy_qty?: number; // e.g. 2 for 2x1, 3 for 3x2, 4 for 4x3
+  visual_style?: 'promo' | 'liquidacion'; // Top ribbon color style
+  combo_price?: number; // Special pack price when type === 'combo'
+  combo_original_price?: number; // Sum of individual product prices
+  combo_image_url?: string; // Photo of the combo pack uploaded via camera/gallery
   season_tag: SeasonCampaign;
-  badge_text: string; // e.g. "🔥 2x1", "🎃 Halloween 3x2", "💖 San Valentín", "⭐ 20% OFF"
-  badge_color?: string; // hex or tailwind class
+  badge_text: string; // e.g. "PROMO 2x1", "LIQUIDACIÓN", "PACK COMBO"
+  badge_color?: string;
   product_ids: string[]; // specific products included
   start_date?: string;
   end_date?: string;

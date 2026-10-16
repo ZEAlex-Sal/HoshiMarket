@@ -280,9 +280,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Helper to find promotion for product
   const getProductPromotion = (product: Product): Promotion | undefined => {
-    if (!product.promotion_id) return undefined;
-    const promo = promotions.find(p => p.id === product.promotion_id && p.is_active);
-    return promo;
+    return promotions.find(
+      p => p.is_active && (p.id === product.promotion_id || (p.type !== 'combo' && p.product_ids?.includes(product.id)))
+    );
   };
 
   // Cart calculations
@@ -498,6 +498,46 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }).catch(() => {});
   };
 
+  // Helper to build a buyable Combo Product card from a Combo Promotion
+  const buildComboProductFromPromo = (promo: Promotion, baseProducts: Product[]): Product => {
+    const constituentProducts = baseProducts.filter(
+      p => !p.id.startsWith('combo-') && promo.product_ids?.includes(p.id)
+    );
+    const normalSum = constituentProducts.reduce((sum, p) => sum + p.price, 0);
+    const comboOriginalPrice = Number(promo.combo_original_price || normalSum || 0);
+    const comboPrice = Number(promo.combo_price || promo.discount_value || normalSum || 15);
+    const comboImage =
+      promo.combo_image_url ||
+      constituentProducts[0]?.image_url ||
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=700&q=80';
+    const includedList = constituentProducts.map(p => p.name).join(' + ');
+    const comboDescription = promo.description
+      ? includedList && !promo.description.includes(includedList)
+        ? `${promo.description} • Incluye: ${includedList}`
+        : promo.description
+      : includedList
+      ? `Pack especial que incluye: ${includedList}`
+      : 'Pack Combo Especial Hoshi Market';
+
+    return {
+      id: `combo-${promo.id}`,
+      code: `PACK-${promo.id.slice(-4).toUpperCase()}`,
+      name: promo.name,
+      korean_name: '호시 콤보 팩',
+      description: comboDescription,
+      category_id: categories[0]?.id || 'cat-ramen',
+      category_name: 'Pack & Combo',
+      price: comboPrice,
+      original_price: comboOriginalPrice > comboPrice ? comboOriginalPrice : undefined,
+      unit: constituentProducts.length > 0 ? `pack (${constituentProducts.length} prod.)` : 'pack combo',
+      image_url: comboImage,
+      in_stock: promo.is_active,
+      stock_quantity: promo.is_active ? 20 : 0,
+      is_featured: true,
+      promotion_id: promo.id
+    };
+  };
+
   // Admin: Promotions CRUD
   const addPromotion = async (promoData: Omit<Promotion, 'id'>) => {
     lastMutationTimeRef.current = Date.now();
@@ -508,14 +548,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const updatedPromos = [...promotions, newPromo];
     savePromotions(updatedPromos);
 
-    fetch('/api/store', {
+    await fetch('/api/store', {
       method: 'POST',
       headers: getCustomHeaders(),
       body: JSON.stringify({ action: 'add_promotion', payload: newPromo })
     }).catch(() => {});
 
-    // Assign promotion to products if product_ids specified
-    if (newPromo.product_ids && newPromo.product_ids.length > 0) {
+    if (newPromo.type === 'combo') {
+      const comboProd = buildComboProductFromPromo(newPromo, products);
+      const nextProducts = [comboProd, ...products.filter(p => p.id !== comboProd.id)];
+      saveProducts(nextProducts);
+      await fetch('/api/store', {
+        method: 'POST',
+        headers: getCustomHeaders(),
+        body: JSON.stringify({ action: 'add_product', payload: comboProd })
+      }).catch(() => {});
+    } else if (newPromo.product_ids && newPromo.product_ids.length > 0) {
       const updatedProducts = products.map(p => {
         if (newPromo.product_ids.includes(p.id)) {
           return { ...p, promotion_id: newPromo.id };
@@ -523,31 +571,84 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return p;
       });
       saveProducts(updatedProducts);
+
+      for (const pid of newPromo.product_ids) {
+        fetch('/api/store', {
+          method: 'POST',
+          headers: getCustomHeaders(),
+          body: JSON.stringify({ action: 'update_product', payload: { id: pid, updates: { promotion_id: newPromo.id } } })
+        }).catch(() => {});
+      }
     }
   };
 
   const updatePromotion = async (id: string, updates: Partial<Promotion>) => {
     lastMutationTimeRef.current = Date.now();
-    const updatedPromos = promotions.map(p => p.id === id ? { ...p, ...updates } : p);
+    const existingPromo = promotions.find(p => p.id === id);
+    const fullUpdatedPromo: Promotion = existingPromo
+      ? { ...existingPromo, ...updates, id }
+      : ({ ...updates, id } as Promotion);
+
+    const updatedPromos = promotions.map(p => (p.id === id ? fullUpdatedPromo : p));
     savePromotions(updatedPromos);
 
-    fetch('/api/store', {
+    await fetch('/api/store', {
       method: 'POST',
       headers: getCustomHeaders(),
-      body: JSON.stringify({ action: 'update_promotion', payload: { id, updates } })
+      body: JSON.stringify({ action: 'update_promotion', payload: { id, updates: fullUpdatedPromo } })
     }).catch(() => {});
 
-    // If active state changed or product assignment changed
-    if (updates.product_ids) {
-      const updatedProducts = products.map(p => {
-        if (updates.product_ids?.includes(p.id)) {
-          return { ...p, promotion_id: id };
-        } else if (p.promotion_id === id) {
-          return { ...p, promotion_id: undefined };
-        }
-        return p;
-      });
-      saveProducts(updatedProducts);
+    const comboProdId = `combo-${id}`;
+
+    if (fullUpdatedPromo.type === 'combo') {
+      const comboProd = buildComboProductFromPromo(fullUpdatedPromo, products);
+      const exists = products.some(p => p.id === comboProdId);
+      const nextProducts = exists
+        ? products.map(p => (p.id === comboProdId ? comboProd : p))
+        : [comboProd, ...products];
+      saveProducts(nextProducts);
+      await fetch('/api/store', {
+        method: 'POST',
+        headers: getCustomHeaders(),
+        body: JSON.stringify({ action: 'add_product', payload: comboProd })
+      }).catch(() => {});
+    } else {
+      // Remove any old combo product if type was switched away from combo
+      let baseProducts = products;
+      if (products.some(p => p.id === comboProdId)) {
+        baseProducts = products.filter(p => p.id !== comboProdId);
+        fetch('/api/store', {
+          method: 'POST',
+          headers: getCustomHeaders(),
+          body: JSON.stringify({ action: 'delete_product', payload: { id: comboProdId } })
+        }).catch(() => {});
+      }
+
+      if (updates.product_ids) {
+        const updatedProducts = baseProducts.map(p => {
+          if (updates.product_ids?.includes(p.id)) {
+            if (p.promotion_id !== id) {
+              fetch('/api/store', {
+                method: 'POST',
+                headers: getCustomHeaders(),
+                body: JSON.stringify({ action: 'update_product', payload: { id: p.id, updates: { promotion_id: id } } })
+              }).catch(() => {});
+            }
+            return { ...p, promotion_id: id };
+          } else if (p.promotion_id === id) {
+            fetch('/api/store', {
+              method: 'POST',
+              headers: getCustomHeaders(),
+              body: JSON.stringify({ action: 'update_product', payload: { id: p.id, updates: { promotion_id: '' } } })
+            }).catch(() => {});
+            return { ...p, promotion_id: undefined };
+          }
+          return p;
+        });
+        saveProducts(updatedProducts);
+      } else {
+        saveProducts(baseProducts);
+      }
     }
   };
 
@@ -555,7 +656,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     lastMutationTimeRef.current = Date.now();
     const updatedPromos = promotions.filter(p => p.id !== id);
     savePromotions(updatedPromos);
-    const updatedProducts = products.map(p => p.promotion_id === id ? { ...p, promotion_id: undefined } : p);
+
+    const comboProdId = `combo-${id}`;
+    const hadComboProd = products.some(p => p.id === comboProdId);
+    const affectedProducts = products.filter(p => p.promotion_id === id && p.id !== comboProdId);
+
+    const updatedProducts = products
+      .filter(p => p.id !== comboProdId)
+      .map(p => (p.promotion_id === id ? { ...p, promotion_id: undefined } : p));
     saveProducts(updatedProducts);
 
     fetch('/api/store', {
@@ -563,6 +671,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       headers: getCustomHeaders(),
       body: JSON.stringify({ action: 'delete_promotion', payload: { id } })
     }).catch(() => {});
+
+    if (hadComboProd) {
+      fetch('/api/store', {
+        method: 'POST',
+        headers: getCustomHeaders(),
+        body: JSON.stringify({ action: 'delete_product', payload: { id: comboProdId } })
+      }).catch(() => {});
+    }
+
+    for (const prod of affectedProducts) {
+      fetch('/api/store', {
+        method: 'POST',
+        headers: getCustomHeaders(),
+        body: JSON.stringify({ action: 'update_product', payload: { id: prod.id, updates: { promotion_id: '' } } })
+      }).catch(() => {});
+    }
   };
 
   // Sync from Billing Excel / CSV

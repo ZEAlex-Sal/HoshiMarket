@@ -122,6 +122,46 @@ function sanitizeProduct(p: any) {
   return clean;
 }
 
+const HOSHI_PROMO_MARKER = '###HOSHI_PROMO_META###';
+
+function packPromotionMeta(p: any): string {
+  const meta = {
+    visual_style: p.visual_style || (p.season_tag === 'vencimiento' || p.season_tag === 'liquidacion' ? 'liquidacion' : 'promo'),
+    buy_qty: p.buy_qty ? Number(p.buy_qty) : undefined,
+    combo_price: p.combo_price ? Number(p.combo_price) : undefined,
+    combo_original_price: p.combo_original_price ? Number(p.combo_original_price) : undefined,
+    combo_image_url: p.combo_image_url || undefined,
+    original_season_tag: p.season_tag || 'general'
+  };
+  let baseMsg = p.banner_message || '';
+  if (typeof baseMsg === 'string' && baseMsg.includes(HOSHI_PROMO_MARKER)) {
+    baseMsg = baseMsg.split(HOSHI_PROMO_MARKER)[0].trim();
+  }
+  return `${baseMsg}\n${HOSHI_PROMO_MARKER}\n${JSON.stringify(meta)}`;
+}
+
+function unpackPromotionFromDb(dbPromo: any) {
+  if (!dbPromo) return dbPromo;
+  const unpacked = { ...dbPromo };
+  if (typeof unpacked.banner_message === 'string' && unpacked.banner_message.includes(HOSHI_PROMO_MARKER)) {
+    try {
+      const parts = unpacked.banner_message.split(HOSHI_PROMO_MARKER);
+      unpacked.banner_message = parts[0].trim();
+      const meta = JSON.parse(parts[1].trim());
+      if (meta.visual_style) unpacked.visual_style = meta.visual_style;
+      if (meta.buy_qty !== undefined) unpacked.buy_qty = meta.buy_qty;
+      if (meta.combo_price !== undefined) unpacked.combo_price = meta.combo_price;
+      if (meta.combo_original_price !== undefined) unpacked.combo_original_price = meta.combo_original_price;
+      if (meta.combo_image_url !== undefined) unpacked.combo_image_url = meta.combo_image_url;
+      if (meta.original_season_tag) unpacked.season_tag = meta.original_season_tag;
+    } catch {}
+  }
+  if (!unpacked.visual_style) {
+    unpacked.visual_style = (unpacked.season_tag === 'vencimiento' || unpacked.season_tag === 'liquidacion') ? 'liquidacion' : 'promo';
+  }
+  return unpacked;
+}
+
 // Sanitizer for promotions
 function sanitizePromotion(p: any) {
   const allowedTags = ['todos', 'halloween', 'navidad', 'san_valentin', 'verano', 'aniversario', 'general'];
@@ -131,17 +171,17 @@ function sanitizePromotion(p: any) {
     id: String(p.id),
     name: String(p.name || ''),
     type: allowedTypes.includes(p.type) ? p.type : '2x1',
-    badge_text: String(p.badge_text || '🔥 Promo'),
+    badge_text: String(p.badge_text || 'PROMO'),
     badge_color: String(p.badge_color || '#9368B7'),
     discount_value: Number(p.discount_value) || 0,
     season_tag: allowedTags.includes(p.season_tag) ? p.season_tag : 'general',
     is_active: p.is_active !== false,
     product_ids: Array.isArray(p.product_ids) ? p.product_ids : [],
+    banner_message: packPromotionMeta(p),
     created_at: p.created_at || new Date().toISOString()
   };
 
-  if (p.description) clean.description = String(p.description);
-  if (p.banner_message) clean.banner_message = String(p.banner_message);
+  if (p.description !== undefined) clean.description = String(p.description || '');
 
   if (p.start_date && String(p.start_date).trim()) {
     clean.start_date = String(p.start_date).trim();
@@ -224,7 +264,17 @@ function sanitizePromotionUpdates(updates: any) {
   if (updates.is_active !== undefined) clean.is_active = Boolean(updates.is_active);
   if (updates.product_ids !== undefined) clean.product_ids = Array.isArray(updates.product_ids) ? updates.product_ids : [];
   if (updates.description !== undefined) clean.description = String(updates.description || '');
-  if (updates.banner_message !== undefined) clean.banner_message = String(updates.banner_message || '');
+  if (
+    updates.banner_message !== undefined ||
+    updates.visual_style !== undefined ||
+    updates.buy_qty !== undefined ||
+    updates.combo_price !== undefined ||
+    updates.combo_original_price !== undefined ||
+    updates.combo_image_url !== undefined ||
+    updates.season_tag !== undefined
+  ) {
+    clean.banner_message = packPromotionMeta(updates);
+  }
   if (updates.start_date !== undefined) clean.start_date = String(updates.start_date || '').trim() || null;
   if (updates.end_date !== undefined) clean.end_date = String(updates.end_date || '').trim() || null;
   return clean;
@@ -265,7 +315,7 @@ export async function GET(request: Request) {
 
     let products = prodsRes.data || [];
     let categories = catsRes.data || [];
-    let promotions = promosRes.data || [];
+    let promotions = (promosRes.data || []).map(unpackPromotionFromDb);
     let settings = unpackSettingsFromDb(settingsRes.data);
 
     // Auto-seed if database is freshly created and empty
@@ -277,7 +327,7 @@ export async function GET(request: Request) {
         await supabase.from('store_settings').upsert(packSettingsForDb(INITIAL_SETTINGS));
         products = INITIAL_PRODUCTS.map(sanitizeProduct);
         categories = INITIAL_CATEGORIES.map(sanitizeCategory);
-        promotions = INITIAL_PROMOTIONS.map(sanitizePromotion);
+        promotions = INITIAL_PROMOTIONS.map(sanitizePromotion).map(unpackPromotionFromDb);
       } catch {}
     }
 

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Product, Promotion } from '@/types';
 import { useStore } from '@/context/store-context';
-import { X, Plus, Minus, Star, Flame, Sparkles, Check } from 'lucide-react';
+import { X, Plus, Minus, Star, Flame, Sparkles, Check, Clock } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface ProductDetailModalProps {
@@ -18,9 +18,25 @@ export default function ProductDetailModal({ product, onClose }: ProductDetailMo
 
   if (!product) return null;
 
-  const promotion: Promotion | undefined = product.promotion_id 
-    ? promotions.find(p => p.id === product.promotion_id && p.is_active)
-    : undefined;
+  const promotion: Promotion | undefined = promotions.find(
+    p => p.is_active && (p.id === product.promotion_id || (p.type !== 'combo' && p.product_ids?.includes(product.id)))
+  );
+
+  const isLiquidacionStyle =
+    promotion?.visual_style === 'liquidacion' || promotion?.season_tag === 'vencimiento';
+
+  const isPercentDiscount =
+    promotion?.type === 'discount_percent' &&
+    (promotion.discount_value || 0) > 0 &&
+    !product.id.startsWith('combo-');
+
+  const displayPrice = isPercentDiscount
+    ? Number((product.price * (1 - (promotion.discount_value || 0) / 100)).toFixed(2))
+    : product.price;
+
+  const displayOriginalPrice = isPercentDiscount
+    ? product.price
+    : product.original_price;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     addToCart(product, quantity);
@@ -69,9 +85,17 @@ export default function ProductDetailModal({ product, onClose }: ProductDetailMo
 
         {/* Top Promo Announcement if active */}
         {promotion && !isOut && (
-          <div className="bg-gradient-to-r from-[#9368B7] via-[#FF6B8B] to-[#9368B7] text-white px-4 py-2 text-xs font-black flex items-center justify-between">
+          <div className={`text-white px-4 py-2 text-xs font-black flex items-center justify-between ${
+            isLiquidacionStyle
+              ? 'bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500'
+              : 'bg-gradient-to-r from-[#9368B7] via-[#FF6B8B] to-[#9368B7]'
+          }`}>
             <span className="flex items-center gap-1.5">
-              <Star className="w-4 h-4 text-amber-300 fill-amber-300 animate-spin" style={{ animationDuration: '4s' }} />
+              {isLiquidacionStyle ? (
+                <Clock className="w-4 h-4 text-amber-200 animate-pulse" />
+              ) : (
+                <Star className="w-4 h-4 text-amber-300 fill-amber-300 animate-spin" style={{ animationDuration: '4s' }} />
+              )}
               {promotion.badge_text}
             </span>
             <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full uppercase">
@@ -158,11 +182,16 @@ export default function ProductDetailModal({ product, onClose }: ProductDetailMo
           {/* Price, Stepper and CTA */}
           <div className="pt-3 border-t border-[#F3EDF8] flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
+              {displayOriginalPrice && displayOriginalPrice > displayPrice && (
+                <span className="text-xs text-[#9D91A8] line-through block">
+                  Antes: {settings.currency_symbol} {(displayOriginalPrice * quantity).toFixed(2)}
+                </span>
+              )}
               <span className={`text-2xl font-black ${isOut ? 'text-gray-400' : 'text-[#261C30]'}`}>
-                {settings.currency_symbol} {(product.price * quantity).toFixed(2)}
+                {settings.currency_symbol} {(displayPrice * quantity).toFixed(2)}
               </span>
               <span className="text-xs text-[#867894] block">
-                ({settings.currency_symbol} {product.price.toFixed(2)} / {product.unit || 'unidad'})
+                ({settings.currency_symbol} {displayPrice.toFixed(2)} / {product.unit || 'unidad'})
               </span>
             </div>
 
