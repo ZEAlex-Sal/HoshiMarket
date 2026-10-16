@@ -107,8 +107,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Fetch latest data from cloud (/api/store)
   const reloadFromCloud = async () => {
     try {
-      const res = await fetch('/api/store', {
-        headers: getCustomHeaders()
+      const res = await fetch(`/api/store?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          ...getCustomHeaders(),
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
       });
       const data = await res.json();
       if (data.connected && data.tablesReady) {
@@ -166,12 +171,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setIsSyncing(false);
       if (data.success) {
         setCloudSyncStatus('connected');
+        setCloudErrorDetail('');
+        // Trigger a fresh reload to verify
+        await reloadFromCloud();
         return { success: true, message: '¡Productos y catálogo sincronizados con éxito en la nube!' };
       } else {
+        setCloudErrorDetail(data.error || '');
         return { success: false, message: data.error || 'No se pudo sincronizar con Supabase' };
       }
     } catch (err: any) {
       setIsSyncing(false);
+      setCloudErrorDetail(err?.message || '');
       return { success: false, message: err?.message || 'Error de conexión con el servidor' };
     }
   };
@@ -563,15 +573,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return { updated: updatedCount, created: createdCount };
   };
 
-  const updateSettings = (updates: Partial<StoreSettings>) => {
+  const updateSettings = async (updates: Partial<StoreSettings>) => {
     const newSettings = { ...settings, ...updates };
     saveSettings(newSettings);
 
-    fetch('/api/store', {
-      method: 'POST',
-      headers: getCustomHeaders(),
-      body: JSON.stringify({ action: 'update_settings', payload: newSettings })
-    }).catch(() => {});
+    try {
+      const res = await fetch('/api/store', {
+        method: 'POST',
+        headers: getCustomHeaders(),
+        body: JSON.stringify({ action: 'update_settings', payload: newSettings })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        console.error('Error saving settings:', data.error);
+        setCloudErrorDetail(data.error || 'Error al guardar configuración');
+      }
+    } catch (err: any) {
+      console.error('Network error saving settings:', err);
+    }
   };
 
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);

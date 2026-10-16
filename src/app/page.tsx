@@ -21,10 +21,16 @@ export default function Home() {
     selectedSeason, 
     searchQuery, 
     setSearchQuery,
-    settings 
+    settings,
+    reloadFromCloud
   } = useStore();
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // Revalidate on page load to guarantee fresh cloud data in incognito & mobile
+  React.useEffect(() => {
+    reloadFromCloud();
+  }, []);
 
   // Filtered products list
   const filteredProducts = useMemo(() => {
