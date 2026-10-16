@@ -1465,32 +1465,32 @@ export default function AdminPage() {
       {/* ======================================================== */}
       {isProductModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-[#261C30]/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
-          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[88vh] flex flex-col border border-[#EADBEE] shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col border border-[#EADBEE] shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
             {/* Header Sticky */}
-            <div className="px-5 py-3.5 border-b border-[#F3EDF8] flex items-center justify-between bg-white flex-shrink-0">
+            <div className="px-5 sm:px-6 py-4 border-b border-[#F3EDF8] flex items-center justify-between bg-white flex-shrink-0">
               <div>
-                <h3 className="font-black text-sm sm:text-base text-[#261C30]">
+                <h3 className="font-black text-base sm:text-lg text-[#261C30]">
                   {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
                 </h3>
-                <p className="text-[10px] text-[#867894]">
+                <p className="text-xs text-[#867894] mt-0.5">
                   {editingProduct ? 'Modifica los datos y guárdalos en el catálogo' : 'Agrega un nuevo ítem a la tienda'}
                 </p>
               </div>
               <button 
                 type="button"
                 onClick={() => setIsProductModalOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-[#FAF8F5] text-[#9D91A8] hover:text-[#261C30] transition-colors"
+                className="p-2 rounded-xl hover:bg-[#FAF8F5] text-[#9D91A8] hover:text-[#261C30] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Scrollable Form Body */}
-            <form onSubmit={handleSaveProduct} className="flex flex-col flex-1 overflow-hidden text-xs">
-              <div className="p-4 sm:p-5 overflow-y-auto space-y-3 flex-1">
-                <div className="grid grid-cols-2 gap-2.5">
+            <form onSubmit={handleSaveProduct} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="font-bold text-[#261C30] block mb-1">Nombre en Español *</label>
+                    <label className="font-bold text-xs sm:text-sm text-[#261C30] block mb-1">Nombre en Español *</label>
                     <input
                       type="text"
                       required
@@ -1503,14 +1503,14 @@ export default function AdminPage() {
                           korean_name: translateToKorean(val)
                         });
                       }}
-                      className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7]"
+                      className="w-full bg-[#FAF8F5] p-2.5 sm:p-3 rounded-xl border border-[#EADBEE] text-sm focus:ring-2 focus:ring-[#9368B7] outline-hidden"
                       placeholder="Ej. Samyang Buldak Carbonara"
                     />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="font-bold text-[#261C30] block">Nombre en Coreano</label>
-                      <span className="text-[9px] text-[#9368B7] font-semibold bg-[#EFE6F7] px-1.5 py-0.2 rounded flex items-center gap-1">
+                      <label className="font-bold text-xs sm:text-sm text-[#261C30] block">Nombre en Coreano</label>
+                      <span className="text-[10px] text-[#9368B7] font-semibold bg-[#EFE6F7] px-2 py-0.5 rounded-md flex items-center gap-1">
                         <Lock className="w-2.5 h-2.5" /> Auto
                       </span>
                     </div>
@@ -1519,29 +1519,29 @@ export default function AdminPage() {
                       readOnly
                       tabIndex={-1}
                       value={prodForm.korean_name}
-                      className="w-full bg-[#FAF8F5]/80 p-2 rounded-xl border border-[#EADBEE] text-[#9368B7] font-bold cursor-not-allowed select-all"
+                      className="w-full bg-[#FAF8F5]/80 p-2.5 sm:p-3 rounded-xl border border-[#EADBEE] text-[#9368B7] font-bold text-sm cursor-not-allowed select-all outline-hidden"
                       placeholder="Traducción automática..."
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                   <div>
-                    <label className="font-bold text-[#261C30] block mb-1">Código / SKU</label>
+                    <label className="font-bold text-xs sm:text-sm text-[#261C30] block mb-1">Código / SKU</label>
                     <input
                       type="text"
                       value={prodForm.code}
                       onChange={(e) => setProdForm({ ...prodForm, code: e.target.value })}
-                      className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
+                      className="w-full bg-[#FAF8F5] p-2.5 sm:p-3 rounded-xl border border-[#EADBEE] text-sm outline-hidden"
                       placeholder="RAM-001"
                     />
                   </div>
                   <div>
-                    <label className="font-bold text-[#261C30] block mb-1">Categoría *</label>
+                    <label className="font-bold text-xs sm:text-sm text-[#261C30] block mb-1">Categoría *</label>
                     <select
                       value={prodForm.category_id}
                       onChange={(e) => setProdForm({ ...prodForm, category_id: e.target.value })}
-                      className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
+                      className="w-full bg-[#FAF8F5] p-2.5 sm:p-3 rounded-xl border border-[#EADBEE] text-sm outline-hidden"
                     >
                       {categories.map((c) => (
                         <option key={c.id} value={c.id}>
@@ -1551,37 +1551,37 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="font-bold text-[#261C30] block mb-1">Unidad</label>
+                    <label className="font-bold text-xs sm:text-sm text-[#261C30] block mb-1">Unidad</label>
                     <input
                       type="text"
                       value={prodForm.unit}
                       onChange={(e) => setProdForm({ ...prodForm, unit: e.target.value })}
-                      className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
+                      className="w-full bg-[#FAF8F5] p-2.5 sm:p-3 rounded-xl border border-[#EADBEE] text-sm outline-hidden"
                       placeholder="paquete 130g"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="font-bold text-[#261C30] block mb-1">Precio Unitario (S/.) *</label>
+                    <label className="font-bold text-xs sm:text-sm text-[#261C30] block mb-1">Precio Unitario (S/.) *</label>
                     <input
                       type="number"
                       step="0.10"
                       required
                       value={prodForm.price}
                       onChange={(e) => setProdForm({ ...prodForm, price: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE] font-bold"
+                      className="w-full bg-[#FAF8F5] p-2.5 sm:p-3 rounded-xl border border-[#EADBEE] font-bold text-sm outline-hidden"
                     />
                   </div>
                   <div>
-                    <label className="font-bold text-[#261C30] block mb-1">Precio Regular (Tachado)</label>
+                    <label className="font-bold text-xs sm:text-sm text-[#261C30] block mb-1">Precio Regular (Tachado)</label>
                     <input
                       type="number"
                       step="0.10"
                       value={prodForm.original_price}
                       onChange={(e) => setProdForm({ ...prodForm, original_price: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
+                      className="w-full bg-[#FAF8F5] p-2.5 sm:p-3 rounded-xl border border-[#EADBEE] text-sm outline-hidden"
                       placeholder="Opcional"
                     />
                   </div>
@@ -1589,8 +1589,8 @@ export default function AdminPage() {
 
                 {/* Selector de 3 Niveles de Stock */}
                 <div>
-                  <label className="font-bold text-[#261C30] block mb-1">Estado de Stock</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <label className="font-bold text-xs sm:text-sm text-[#261C30] block mb-1.5">Estado de Stock</label>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {(() => {
                       const currentModalStock: 'available' | 'low' | 'out' =
                         !prodForm.in_stock || prodForm.stock_quantity === 0
@@ -1604,39 +1604,39 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => setProdForm({ ...prodForm, in_stock: true, stock_quantity: 25 })}
-                            className={`p-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                            className={`p-2.5 sm:p-3 rounded-xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
                               currentModalStock === 'available'
                                 ? 'bg-emerald-50 border-emerald-400 text-emerald-900 ring-2 ring-emerald-200 shadow-xs'
                                 : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
                             }`}
                           >
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
                             <span>Disponible</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => setProdForm({ ...prodForm, in_stock: true, stock_quantity: 3 })}
-                            className={`p-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                            className={`p-2.5 sm:p-3 rounded-xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
                               currentModalStock === 'low'
                                 ? 'bg-amber-50 border-amber-400 text-amber-900 ring-2 ring-amber-200 shadow-xs'
                                 : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
                             }`}
                           >
-                            <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
-                            <span>Pocas unidades</span>
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0" />
+                            <span>Pocas unid.</span>
                           </button>
 
                           <button
                             type="button"
                             onClick={() => setProdForm({ ...prodForm, in_stock: false, stock_quantity: 0 })}
-                            className={`p-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                            className={`p-2.5 sm:p-3 rounded-xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
                               currentModalStock === 'out'
                                 ? 'bg-rose-50 border-rose-400 text-rose-900 ring-2 ring-rose-200 shadow-xs'
                                 : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
                             }`}
                           >
-                            <span className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 flex-shrink-0" />
                             <span>Agotado</span>
                           </button>
                         </>
@@ -1647,10 +1647,10 @@ export default function AdminPage() {
 
                 {/* Selector de Destacado / Cinta Superior en la Tarjeta */}
                 <div>
-                  <label className="font-bold text-[#261C30] block mb-1">
+                  <label className="font-bold text-xs sm:text-sm text-[#261C30] block mb-1.5">
                     Destacado / Cinta Superior del Producto
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {(() => {
                       const isNew = prodForm.tags.includes('novedad');
                       const isFav = prodForm.is_featured && !isNew;
@@ -1667,7 +1667,7 @@ export default function AdminPage() {
                                 tags: prodForm.tags.filter(t => t !== 'novedad')
                               })
                             }
-                            className={`p-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                            className={`p-2.5 sm:p-3 rounded-xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
                               isNormal
                                 ? 'bg-white border-[#9368B7] text-[#261C30] ring-2 ring-[#9368B7]/20 shadow-xs'
                                 : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
@@ -1686,7 +1686,7 @@ export default function AdminPage() {
                                 tags: prodForm.tags.filter(t => t !== 'novedad')
                               })
                             }
-                            className={`p-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                            className={`p-2.5 sm:p-3 rounded-xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
                               isFav
                                 ? 'bg-[#EFE6F7] border-[#9368B7] text-[#9368B7] ring-2 ring-[#9368B7]/30 shadow-xs'
                                 : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
@@ -1705,7 +1705,7 @@ export default function AdminPage() {
                                 tags: Array.from(new Set([...prodForm.tags, 'novedad']))
                               })
                             }
-                            className={`p-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                            className={`p-2.5 sm:p-3 rounded-xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
                               isNew
                                 ? 'bg-sky-50 border-sky-400 text-sky-800 ring-2 ring-sky-200 shadow-xs'
                                 : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
@@ -1721,15 +1721,15 @@ export default function AdminPage() {
                 </div>
 
                 {/* Subir Foto: Cámara, Galería o URL */}
-                <div className="space-y-2 p-3 bg-[#FAF8F5] rounded-2xl border border-[#EADBEE]">
+                <div className="space-y-3 p-3.5 sm:p-4 bg-[#FAF8F5] rounded-2xl border border-[#EADBEE]">
                   <div className="flex items-center justify-between">
-                    <label className="font-bold text-[#261C30] block">
+                    <label className="font-bold text-xs sm:text-sm text-[#261C30] block">
                       Foto del Producto *
                     </label>
                     <button
                       type="button"
                       onClick={() => setImageUploadMode(imageUploadMode === 'upload' ? 'url' : 'upload')}
-                      className="text-[11px] text-[#9368B7] hover:underline font-bold"
+                      className="text-xs text-[#9368B7] hover:underline font-bold"
                     >
                       {imageUploadMode === 'upload' ? '🔗 Usar enlace URL' : '📁 Subir foto o cámara'}
                     </button>
@@ -1755,38 +1755,38 @@ export default function AdminPage() {
                   />
 
                   {imageUploadMode === 'upload' ? (
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <button
                           type="button"
                           onClick={() => cameraInputRef.current?.click()}
-                          className="flex items-center justify-center gap-1.5 p-2 bg-white hover:bg-[#EFE6F7] text-[#9368B7] font-bold rounded-xl border border-[#D8C3E5] shadow-xs transition-colors"
+                          className="flex items-center justify-center gap-2 p-2.5 sm:p-3 bg-white hover:bg-[#EFE6F7] text-[#9368B7] font-bold rounded-xl border border-[#D8C3E5] shadow-xs text-xs sm:text-sm transition-colors"
                         >
-                          <Camera className="w-3.5 h-3.5" />
+                          <Camera className="w-4 h-4" />
                           <span>Tomar Foto (Cámara)</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => galleryInputRef.current?.click()}
-                          className="flex items-center justify-center gap-1.5 p-2 bg-white hover:bg-[#EFE6F7] text-[#9368B7] font-bold rounded-xl border border-[#D8C3E5] shadow-xs transition-colors"
+                          className="flex items-center justify-center gap-2 p-2.5 sm:p-3 bg-white hover:bg-[#EFE6F7] text-[#9368B7] font-bold rounded-xl border border-[#D8C3E5] shadow-xs text-xs sm:text-sm transition-colors"
                         >
-                          <ImageIcon className="w-3.5 h-3.5" />
+                          <ImageIcon className="w-4 h-4" />
                           <span>Galería o Archivos</span>
                         </button>
                       </div>
 
                       {isProcessingImage && (
                         <p className="text-center text-xs text-[#9368B7] font-bold flex items-center justify-center gap-1.5 py-1">
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <RefreshCw className="w-4 h-4 animate-spin" />
                           Optimizando y preparando foto...
                         </p>
                       )}
 
                       {/* Image Preview thumbnail if available */}
                       {prodForm.image_url && (
-                        <div className="flex items-center gap-3 p-2 bg-white rounded-xl border border-[#EADBEE]">
-                          <div className="w-12 h-12 bg-[#FAF8F5] rounded-lg p-1 border border-[#F3EDF8] flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-[#EADBEE]">
+                          <div className="w-14 h-14 bg-[#FAF8F5] rounded-lg p-1 border border-[#F3EDF8] flex items-center justify-center overflow-hidden flex-shrink-0">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={prodForm.image_url}
@@ -1794,37 +1794,37 @@ export default function AdminPage() {
                               className="w-full h-full object-contain"
                             />
                           </div>
-                          <div className="flex-1 min-w-0 text-[11px]">
+                          <div className="flex-1 min-w-0 text-xs">
                             <p className="font-bold text-emerald-700 flex items-center gap-1">
-                              <Check className="w-3.5 h-3.5" />
+                              <Check className="w-4 h-4" />
                               Foto lista para el catálogo
                             </p>
-                            <p className="text-[#867894] truncate">
+                            <p className="text-[#867894] truncate text-[11px] sm:text-xs">
                               Optimizado para carga rápida en móviles
                             </p>
                           </div>
                           <button
                             type="button"
                             onClick={() => setProdForm({ ...prodForm, image_url: '' })}
-                            className="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg"
+                            className="text-rose-500 hover:bg-rose-50 p-2 rounded-xl transition-colors"
                             title="Quitar foto"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       )}
                     </div>
                   ) : (
                     /* Manual URL fallback */
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <input
                         type="url"
                         value={prodForm.image_url}
                         onChange={(e) => setProdForm({ ...prodForm, image_url: e.target.value })}
-                        className="w-full bg-white p-2 rounded-xl border border-[#EADBEE]"
+                        className="w-full bg-white p-2.5 sm:p-3 rounded-xl border border-[#EADBEE] text-sm outline-hidden"
                         placeholder="https://ejemplo.com/foto-ramen.jpg"
                       />
-                      <p className="text-[10px] text-[#867894]">
+                      <p className="text-xs text-[#867894]">
                         Pega el enlace directo a una imagen alojada en la web.
                       </p>
                     </div>
@@ -1832,11 +1832,11 @@ export default function AdminPage() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-[#261C30] block mb-1">Promoción Asignada</label>
+                  <label className="font-bold text-xs sm:text-sm text-[#261C30] block mb-1">Promoción Asignada</label>
                   <select
                     value={prodForm.promotion_id}
                     onChange={(e) => setProdForm({ ...prodForm, promotion_id: e.target.value })}
-                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
+                    className="w-full bg-[#FAF8F5] p-2.5 sm:p-3 rounded-xl border border-[#EADBEE] text-sm outline-hidden"
                   >
                     <option value="">(Ninguna)</option>
                     {promotions.map((p) => (
@@ -1848,28 +1848,28 @@ export default function AdminPage() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-[#261C30] block mb-1">Descripción</label>
+                  <label className="font-bold text-xs sm:text-sm text-[#261C30] block mb-1">Descripción</label>
                   <textarea
-                    rows={2}
+                    rows={3}
                     value={prodForm.description}
                     onChange={(e) => setProdForm({ ...prodForm, description: e.target.value })}
-                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE] resize-none"
+                    className="w-full bg-[#FAF8F5] p-2.5 sm:p-3 rounded-xl border border-[#EADBEE] text-sm resize-none outline-hidden"
                   />
                 </div>
               </div>
 
               {/* Footer Sticky */}
-              <div className="px-5 py-3 border-t border-[#F3EDF8] flex items-center justify-end gap-2 bg-[#FAF8F5]/80 flex-shrink-0">
+              <div className="px-5 sm:px-6 py-3.5 sm:py-4 border-t border-[#F3EDF8] flex items-center justify-end gap-3 bg-[#FAF8F5]/80 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsProductModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-[#EADBEE] bg-white text-[#6B5E78] font-bold hover:bg-[#FAF8F5] transition-colors"
+                  className="px-4 sm:px-5 py-2.5 rounded-xl border border-[#EADBEE] bg-white text-[#6B5E78] font-bold hover:bg-[#FAF8F5] text-xs sm:text-sm transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#9368B7] hover:bg-[#7E52A3] text-white px-5 py-2 rounded-xl font-bold shadow-md shadow-[#9368B7]/20 flex items-center gap-1.5 transition-all"
+                  className="bg-[#9368B7] hover:bg-[#7E52A3] text-white px-5 sm:px-6 py-2.5 rounded-xl font-bold shadow-md shadow-[#9368B7]/20 flex items-center gap-2 text-xs sm:text-sm transition-all"
                 >
                   <Check className="w-4 h-4" />
                   <span>Guardar Producto</span>
