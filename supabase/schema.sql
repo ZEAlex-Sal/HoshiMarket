@@ -74,30 +74,44 @@ CREATE TABLE IF NOT EXISTS public.store_settings (
     CONSTRAINT single_row CHECK (id = 1)
 );
 
--- 6. Configuración de Seguridad por Nivel de Fila (RLS)
+-- 6. Configuración de Seguridad y Políticas (RLS)
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.promotions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
 
--- Políticas de Lectura Pública (Cualquier visitante puede ver el catálogo)
-CREATE POLICY "Lectura pública de categorías" ON public.categories FOR SELECT USING (true);
-CREATE POLICY "Lectura pública de promociones" ON public.promotions FOR SELECT USING (true);
-CREATE POLICY "Lectura pública de productos" ON public.products FOR SELECT USING (true);
-CREATE POLICY "Lectura pública de configuración" ON public.store_settings FOR SELECT USING (true);
+-- Limpieza preventiva de políticas anteriores
+DROP POLICY IF EXISTS "Acceso total categorías" ON public.categories;
+DROP POLICY IF EXISTS "Acceso total promociones" ON public.promotions;
+DROP POLICY IF EXISTS "Acceso total productos" ON public.products;
+DROP POLICY IF EXISTS "Acceso total configuración" ON public.store_settings;
+DROP POLICY IF EXISTS "Lectura pública de categorías" ON public.categories;
+DROP POLICY IF EXISTS "Lectura pública de promociones" ON public.promotions;
+DROP POLICY IF EXISTS "Lectura pública de productos" ON public.products;
+DROP POLICY IF EXISTS "Lectura pública de configuración" ON public.store_settings;
+DROP POLICY IF EXISTS "Admin modificación categorías" ON public.categories;
+DROP POLICY IF EXISTS "Admin modificación promociones" ON public.promotions;
+DROP POLICY IF EXISTS "Admin modificación productos" ON public.products;
+DROP POLICY IF EXISTS "Admin modificación configuración" ON public.store_settings;
 
--- Políticas de Escritura (Sólo usuarios autenticados / Administrador)
-CREATE POLICY "Admin modificación categorías" ON public.categories FOR ALL TO authenticated USING (true);
-CREATE POLICY "Admin modificación promociones" ON public.promotions FOR ALL TO authenticated USING (true);
-CREATE POLICY "Admin modificación productos" ON public.products FOR ALL TO authenticated USING (true);
-CREATE POLICY "Admin modificación configuración" ON public.store_settings FOR ALL TO authenticated USING (true);
+-- Políticas universales para la API de Hoshi Market (Lectura y Escritura)
+CREATE POLICY "Acceso total categorías" ON public.categories FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Acceso total promociones" ON public.promotions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Acceso total productos" ON public.products FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Acceso total configuración" ON public.store_settings FOR ALL USING (true) WITH CHECK (true);
 
 -- 7. Bucket de Storage en Supabase para imágenes de productos
 INSERT INTO storage.buckets (id, name, public) 
 VALUES ('product-images', 'product-images', true)
 ON CONFLICT (id) DO NOTHING;
 
+DROP POLICY IF EXISTS "Imágenes públicas" ON storage.objects;
+DROP POLICY IF EXISTS "Imágenes subida pública" ON storage.objects;
+DROP POLICY IF EXISTS "Imágenes modificación pública" ON storage.objects;
+DROP POLICY IF EXISTS "Imágenes eliminación pública" ON storage.objects;
+
 CREATE POLICY "Imágenes públicas" ON storage.objects FOR SELECT USING (bucket_id = 'product-images');
-CREATE POLICY "Admin subir imágenes" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'product-images');
-CREATE POLICY "Admin editar imágenes" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'product-images');
-CREATE POLICY "Admin borrar imágenes" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'product-images');
+CREATE POLICY "Imágenes subida pública" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'product-images');
+CREATE POLICY "Imágenes modificación pública" ON storage.objects FOR UPDATE USING (bucket_id = 'product-images');
+CREATE POLICY "Imágenes eliminación pública" ON storage.objects FOR DELETE USING (bucket_id = 'product-images');
+

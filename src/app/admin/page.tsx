@@ -27,8 +27,13 @@ import {
   Camera,
   Image as ImageIcon,
   Smile,
-  RefreshCw
+  RefreshCw,
+  Copy,
+  CheckCheck,
+  Code,
+  Database
 } from 'lucide-react';
+import { HOSHI_SUPABASE_SCHEMA } from '@/lib/supabase-schema-text';
 
 const CATEGORY_EMOJI_GROUPS = [
   { group: '🍜 Ramens & Comida Coreana', emojis: ['🍜', '🥟', '🍲', '🥢', '🍱', '🍙', '🍘', '🍛', '🥩'] },
@@ -67,6 +72,8 @@ export default function AdminPage() {
   const [pinCode, setPinCode] = useState('');
   const [authError, setAuthError] = useState('');
   const [syncMessage, setSyncMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [sqlCopied, setSqlCopied] = useState(false);
+  const [showSqlCode, setShowSqlCode] = useState(false);
 
   // Check persisted session on mount
   useEffect(() => {
@@ -487,13 +494,21 @@ export default function AdminPage() {
           {/* Right actions: Cloud badge, Live Web, Logout */}
           <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
             {/* Cloud Sync Status Indicator */}
-            <div className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border whitespace-nowrap ${
-              cloudSyncStatus === 'connected' 
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : cloudSyncStatus === 'tables_needed'
-                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                : 'bg-[#FAF8F5] text-[#867894] border-[#EADBEE]'
-            }`}>
+            <div 
+              onClick={() => {
+                if (cloudSyncStatus === 'tables_needed') {
+                  setActiveTab('settings');
+                }
+              }}
+              title={cloudSyncStatus === 'tables_needed' ? 'Haz clic para ver cómo inicializar las tablas en Supabase' : undefined}
+              className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border whitespace-nowrap transition-all ${
+                cloudSyncStatus === 'connected' 
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : cloudSyncStatus === 'tables_needed'
+                  ? 'bg-amber-50 text-amber-800 border-amber-300 cursor-pointer hover:bg-amber-100 shadow-xs'
+                  : 'bg-[#FAF8F5] text-[#867894] border-[#EADBEE]'
+              }`}
+            >
               <span className={`w-2 h-2 rounded-full ${
                 cloudSyncStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'
               }`} />
@@ -1111,11 +1126,81 @@ export default function AdminPage() {
                   </div>
 
                   {cloudSyncStatus === 'tables_needed' && (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-1">
-                      <p className="font-bold">⚠️ Falta ejecutar el script SQL en Supabase:</p>
-                      <p className="text-[11px]">
-                        Entra a tu panel de Supabase &gt; <strong>SQL Editor</strong>, abre el archivo <code>supabase/schema.sql</code> de este proyecto, pega el código y pulsa <strong>Run</strong>. Luego vuelve aquí y pulsa &quot;Subir a la Nube Ahora&quot;.
-                      </p>
+                    <div className="p-4 bg-amber-50/90 border border-amber-300 rounded-2xl text-xs text-amber-950 space-y-3 shadow-xs">
+                      <div className="flex items-start gap-2.5">
+                        <Database className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-black text-sm text-amber-900">
+                            Paso único: Inicializar Tablas en Supabase (Solo 30 segundos)
+                          </p>
+                          <p className="text-[11px] text-amber-800 mt-1 leading-relaxed">
+                            Al conectar un proyecto nuevo de Supabase, este viene en blanco sin tablas. Para que cada cambio que hagas se actualice <strong>automáticamente en tiempo real en cualquier celular y para todos los clientes</strong>, copia el código con el botón de abajo, pégalo en tu Supabase SQL Editor y dale a <strong>Run</strong>. ¡Solo se hace esta única vez en la vida del proyecto!
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (typeof navigator !== 'undefined') {
+                              navigator.clipboard.writeText(HOSHI_SUPABASE_SCHEMA);
+                              setSqlCopied(true);
+                              setTimeout(() => setSqlCopied(false), 4000);
+                            }
+                          }}
+                          className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all shadow-xs"
+                        >
+                          {sqlCopied ? <CheckCheck className="w-4 h-4 text-emerald-200" /> : <Copy className="w-4 h-4" />}
+                          <span>{sqlCopied ? '¡Código SQL Copiado al Portapapeles!' : 'Copiar Código SQL (1 Clic)'}</span>
+                        </button>
+
+                        <a
+                          href="https://supabase.com/dashboard"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="bg-white hover:bg-amber-100/70 text-amber-900 border border-amber-300 font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-xs"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Abrir Supabase SQL Editor</span>
+                        </a>
+
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await reloadFromCloud();
+                          }}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-xs"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <span>Ya lo ejecuté, Verificar ahora</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowSqlCode(!showSqlCode)}
+                          className="text-amber-800 hover:text-amber-950 font-bold px-2 py-1 underline text-[11px]"
+                        >
+                          {showSqlCode ? 'Ocultar código' : 'Ver código SQL aquí'}
+                        </button>
+                      </div>
+
+                      {/* Code preview toggle */}
+                      {showSqlCode && (
+                        <div className="mt-2 space-y-1">
+                          <textarea
+                            readOnly
+                            rows={8}
+                            value={HOSHI_SUPABASE_SCHEMA}
+                            className="w-full font-mono text-[10px] p-2.5 bg-white border border-amber-200 rounded-xl text-neutral-800"
+                            onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                          />
+                          <p className="text-[10px] text-amber-700">
+                            Tip: Haz clic adentro y presiona Ctrl + A para seleccionar todo.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
