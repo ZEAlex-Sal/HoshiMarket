@@ -155,7 +155,7 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
       </div>
 
       {/* Image Container with Zoom Effect */}
-      <div className={`relative aspect-square w-full overflow-hidden flex items-center justify-center p-3 ${
+      <div className={`relative aspect-[4/3.6] w-full overflow-hidden flex items-center justify-center p-2.5 ${
         isOut ? 'bg-gray-100' : 'bg-[#FAF8F5]'
       }`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -169,7 +169,7 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
         />
 
         {/* Stock Status Pill (Top-Right) with Green / Orange / Red dot */}
-        <div className="absolute top-2.5 right-2.5 z-10">
+        <div className="absolute top-2 right-2 z-10">
           {stockLevel === 'available' && (
             <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-full text-[10px] font-bold text-emerald-700 border border-emerald-200 shadow-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -192,7 +192,7 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
 
         {/* Promo Floating Tag on photo (left) */}
         {promotion && !isOut && (
-          <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
+          <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
             <span className={`inline-flex items-center gap-1 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-black shadow-md border ${
               isLiquidacionStyle
                 ? 'text-amber-700 border-amber-300'
@@ -213,21 +213,11 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
             </span>
           </div>
         )}
-
-        {/* Out of Stock Center Ribbon */}
-        {isOut && (
-          <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-[1px] flex items-center justify-center">
-            <span className="bg-gray-800/90 text-white font-black text-[11px] px-3.5 py-1.5 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
-              Agotado
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Product Content & Details */}
-      <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-2.5">
-        <div className="space-y-1.5">
+      <div className="p-3 sm:p-3.5 flex-1 flex flex-col justify-between space-y-2">
+        <div className="space-y-1">
           {/* Category & Korean Subtitle */}
           <div className="h-4 flex items-center justify-between text-[10px] text-[#867894] overflow-hidden">
             <span className={`font-semibold uppercase tracking-wider truncate max-w-[120px] ${isOut ? 'text-gray-400' : ''}`}>
@@ -242,15 +232,15 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
             )}
           </div>
 
-          {/* Product Name (Uniform 2-line height) */}
-          <h3 className={`h-10 font-bold text-xs sm:text-sm leading-snug line-clamp-2 transition-colors flex items-start ${
+          {/* Product Name */}
+          <h3 className={`font-bold text-xs sm:text-[13px] leading-tight line-clamp-2 transition-colors ${
             isOut ? 'text-gray-500' : 'text-[#261C30] group-hover:text-[#9368B7]'
           }`}>
             {product.name}
           </h3>
 
-          {/* Description snippet (Uniform 2-line height) */}
-          <p className={`h-8 text-[11px] line-clamp-2 leading-snug overflow-hidden ${
+          {/* Description snippet */}
+          <p className={`text-[11px] line-clamp-2 leading-snug overflow-hidden pt-0.5 ${
             isOut ? 'text-gray-400' : 'text-[#6B5E78]'
           }`}>
             {product.description}
@@ -258,7 +248,7 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
         </div>
 
         {/* Price and Add Button */}
-        <div className={`pt-2 border-t flex items-center justify-between gap-2 ${
+        <div className={`pt-1.5 border-t flex items-center justify-between gap-2 ${
           isOut ? 'border-gray-200' : 'border-[#F3EDF8]'
         }`}>
           <div>
