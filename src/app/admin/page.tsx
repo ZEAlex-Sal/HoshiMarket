@@ -704,41 +704,109 @@ export default function AdminPage() {
                   <tbody className="divide-y divide-[#F3EDF8]">
                     {adminFilteredProducts.map((p) => {
                       const promo = promotions.find(pr => pr.id === p.promotion_id && pr.is_active);
+                      const stockLevel: 'available' | 'low' | 'out' = !p.in_stock || p.stock_quantity === 0
+                        ? 'out'
+                        : p.stock_quantity !== undefined && p.stock_quantity <= 5
+                        ? 'low'
+                        : 'available';
+                      const isOut = stockLevel === 'out';
+
+                      const cycleStockLevel = () => {
+                        if (stockLevel === 'available') {
+                          updateProduct(p.id, { in_stock: true, stock_quantity: 3 });
+                        } else if (stockLevel === 'low') {
+                          updateProduct(p.id, { in_stock: false, stock_quantity: 0 });
+                        } else {
+                          updateProduct(p.id, { in_stock: true, stock_quantity: 25 });
+                        }
+                      };
+
                       return (
-                        <tr key={p.id} className="hover:bg-[#FAF8F5]/60 transition-colors">
+                        <tr key={p.id} className={`transition-colors ${isOut ? 'bg-gray-50/80 text-gray-400' : 'hover:bg-[#FAF8F5]/60'}`}>
                           <td className="py-3 px-4 flex items-center gap-3">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img 
                               src={p.image_url} 
                               alt={p.name} 
-                              className="w-10 h-10 object-contain rounded-lg border border-[#EADBEE] bg-[#FAF8F5] p-1 flex-shrink-0"
+                              className={`w-10 h-10 object-contain rounded-lg border p-1 flex-shrink-0 ${
+                                isOut ? 'border-gray-200 bg-gray-100 grayscale opacity-60' : 'border-[#EADBEE] bg-[#FAF8F5]'
+                              }`}
                             />
                             <div className="min-w-0">
-                              <p className="font-bold text-[#261C30] truncate max-w-xs">{p.name}</p>
+                              <p className={`font-bold truncate max-w-xs ${isOut ? 'text-gray-500' : 'text-[#261C30]'}`}>{p.name}</p>
                               {p.korean_name && (
-                                <p className="text-[10px] text-[#9368B7]">{p.korean_name}</p>
+                                <p className={`text-[10px] ${isOut ? 'text-gray-400' : 'text-[#9368B7]'}`}>{p.korean_name}</p>
                               )}
                               <p className="text-[10px] text-[#867894]">SKU: {p.code || 'S/N'}</p>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-[#544660] font-medium">
+                          <td className={`py-3 px-4 font-medium ${isOut ? 'text-gray-400' : 'text-[#544660]'}`}>
                             {p.category_name}
                           </td>
-                          <td className="py-3 px-4 font-bold text-[#261C30]">
+                          <td className={`py-3 px-4 font-bold ${isOut ? 'text-gray-400' : 'text-[#261C30]'}`}>
                             {settings.currency_symbol} {p.price.toFixed(2)}
                             {p.unit && <span className="text-[10px] text-[#867894] block">/{p.unit}</span>}
                           </td>
                           <td className="py-3 px-4">
-                            <button
-                              onClick={() => updateProduct(p.id, { in_stock: !p.in_stock })}
-                              className={`px-2 py-1 rounded-full text-[10px] font-bold ${
-                                p.in_stock 
-                                  ? 'bg-emerald-100 text-emerald-800' 
-                                  : 'bg-rose-100 text-rose-800'
-                              }`}
-                            >
-                              {p.in_stock ? `En Stock (${p.stock_quantity ?? 0})` : 'Agotado'}
-                            </button>
+                            <div className="inline-flex items-center gap-1.5 bg-[#FAF8F5] p-1 rounded-full border border-[#EADBEE]">
+                              <button
+                                type="button"
+                                onClick={cycleStockLevel}
+                                title="Haz clic para cambiar entre Disponible, Pocas unidades y Agotado"
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${
+                                  stockLevel === 'available'
+                                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                    : stockLevel === 'low'
+                                    ? 'bg-amber-50 text-amber-800 border border-amber-300'
+                                    : 'bg-rose-50 text-rose-800 border border-rose-200'
+                                }`}
+                              >
+                                <span
+                                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                    stockLevel === 'available'
+                                      ? 'bg-emerald-500'
+                                      : stockLevel === 'low'
+                                      ? 'bg-amber-500 animate-pulse'
+                                      : 'bg-rose-500'
+                                  }`}
+                                />
+                                <span className="whitespace-nowrap">
+                                  {stockLevel === 'available'
+                                    ? 'Disponible'
+                                    : stockLevel === 'low'
+                                    ? 'Pocas unidades'
+                                    : 'Agotado'}
+                                </span>
+                              </button>
+
+                              {/* Quick 3-dot selector */}
+                              <div className="flex items-center gap-1 pr-1.5 pl-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => updateProduct(p.id, { in_stock: true, stock_quantity: 25 })}
+                                  title="Marcar como Disponible"
+                                  className={`w-2.5 h-2.5 rounded-full bg-emerald-500 transition-transform ${
+                                    stockLevel === 'available' ? 'ring-2 ring-emerald-300 scale-110' : 'opacity-35 hover:opacity-100'
+                                  }`}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => updateProduct(p.id, { in_stock: true, stock_quantity: 3 })}
+                                  title="Marcar como Pocas unidades"
+                                  className={`w-2.5 h-2.5 rounded-full bg-amber-500 transition-transform ${
+                                    stockLevel === 'low' ? 'ring-2 ring-amber-300 scale-110' : 'opacity-35 hover:opacity-100'
+                                  }`}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => updateProduct(p.id, { in_stock: false, stock_quantity: 0 })}
+                                  title="Marcar como Agotado"
+                                  className={`w-2.5 h-2.5 rounded-full bg-rose-500 transition-transform ${
+                                    stockLevel === 'out' ? 'ring-2 ring-rose-300 scale-110' : 'opacity-35 hover:opacity-100'
+                                  }`}
+                                />
+                              </div>
+                            </div>
                           </td>
                           <td className="py-3 px-4">
                             {promo ? (
@@ -1281,7 +1349,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-[#261C30] block mb-1">Precio Unitario (S/.) *</label>
                   <input
@@ -1304,14 +1372,63 @@ export default function AdminPage() {
                     placeholder="Opcional"
                   />
                 </div>
-                <div>
-                  <label className="font-bold text-[#261C30] block mb-1">Stock</label>
-                  <input
-                    type="number"
-                    value={prodForm.stock_quantity}
-                    onChange={(e) => setProdForm({ ...prodForm, stock_quantity: parseInt(e.target.value) || 0 })}
-                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
-                  />
+              </div>
+
+              {/* Selector de 3 Niveles de Stock */}
+              <div>
+                <label className="font-bold text-[#261C30] block mb-1.5">Estado de Stock</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(() => {
+                    const currentModalStock: 'available' | 'low' | 'out' =
+                      !prodForm.in_stock || prodForm.stock_quantity === 0
+                        ? 'out'
+                        : prodForm.stock_quantity <= 5
+                        ? 'low'
+                        : 'available';
+
+                    return (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setProdForm({ ...prodForm, in_stock: true, stock_quantity: 25 })}
+                          className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                            currentModalStock === 'available'
+                              ? 'bg-emerald-50 border-emerald-400 text-emerald-900 ring-2 ring-emerald-200 shadow-xs'
+                              : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
+                          }`}
+                        >
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                          <span>Disponible</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setProdForm({ ...prodForm, in_stock: true, stock_quantity: 3 })}
+                          className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                            currentModalStock === 'low'
+                              ? 'bg-amber-50 border-amber-400 text-amber-900 ring-2 ring-amber-200 shadow-xs'
+                              : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
+                          }`}
+                        >
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0" />
+                          <span>Pocas unidades</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setProdForm({ ...prodForm, in_stock: false, stock_quantity: 0 })}
+                          className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                            currentModalStock === 'out'
+                              ? 'bg-rose-50 border-rose-400 text-rose-900 ring-2 ring-rose-200 shadow-xs'
+                              : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
+                          }`}
+                        >
+                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 flex-shrink-0" />
+                          <span>Agotado</span>
+                        </button>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 

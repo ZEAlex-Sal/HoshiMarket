@@ -46,16 +46,39 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
     }, 1200);
   };
 
+  // Determine 3-tier stock status: 'available' | 'low' | 'out'
+  const stockLevel: 'available' | 'low' | 'out' = !product.in_stock || product.stock_quantity === 0
+    ? 'out'
+    : product.stock_quantity !== undefined && product.stock_quantity <= 5
+    ? 'low'
+    : 'available';
+
+  const isOut = stockLevel === 'out';
+
   return (
     <div 
       onClick={() => onOpenDetail && onOpenDetail(product)}
-      className="group relative bg-white rounded-3xl border border-[#EADBEE] hover:border-[#9368B7]/50 shadow-sm hover:shadow-xl hover:shadow-[#9368B7]/10 transition-all duration-300 flex flex-col overflow-hidden cursor-pointer"
+      className={`group relative rounded-3xl border transition-all duration-300 flex flex-col overflow-hidden cursor-pointer ${
+        isOut
+          ? 'bg-gray-100/90 border-gray-200/90 opacity-80 shadow-none'
+          : 'bg-white border-[#EADBEE] hover:border-[#9368B7]/50 shadow-sm hover:shadow-xl hover:shadow-[#9368B7]/10'
+      }`}
     >
       {/* ======================================================== */}
       {/* PARTE SUPERIOR DEL CARD: ALTURA UNIFORME PARA TODAS LAS TARJETAS */}
       {/* ======================================================== */}
       <div className="h-7 w-full flex-shrink-0 flex items-center">
-        {promotion ? (
+        {isOut ? (
+          <div className="w-full h-full bg-gray-200/80 text-gray-500 px-3 flex items-center justify-between text-[10px] font-bold border-b border-gray-200">
+            <span className="uppercase tracking-wider text-[9px] truncate">
+              {product.category_name || 'Hoshi Market'}
+            </span>
+            <span className="inline-flex items-center gap-1 text-[9px] text-rose-600 font-extrabold">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              SIN STOCK
+            </span>
+          </div>
+        ) : promotion ? (
           <div className={`w-full h-full text-white px-3 flex items-center justify-between text-xs font-black tracking-wide shadow-sm animate-pulse-subtle ${
             promotion.season_tag === 'vencimiento'
               ? 'bg-gradient-to-r from-amber-600 via-rose-600 to-amber-700'
@@ -94,17 +117,43 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
       </div>
 
       {/* Image Container with Zoom Effect */}
-      <div className="relative aspect-square w-full bg-[#FAF8F5] overflow-hidden flex items-center justify-center p-3">
+      <div className={`relative aspect-square w-full overflow-hidden flex items-center justify-center p-3 ${
+        isOut ? 'bg-gray-100' : 'bg-[#FAF8F5]'
+      }`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={product.image_url}
           alt={product.name}
-          className="w-full h-full object-contain object-center group-hover:scale-108 transition-transform duration-500"
+          className={`w-full h-full object-contain object-center transition-transform duration-500 ${
+            isOut ? 'grayscale opacity-55' : 'group-hover:scale-108'
+          }`}
           loading="lazy"
         />
 
+        {/* Stock Status Pill (Top-Right) with Green / Orange / Red dot */}
+        <div className="absolute top-2.5 right-2.5 z-10">
+          {stockLevel === 'available' && (
+            <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-full text-[10px] font-bold text-emerald-700 border border-emerald-200 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>Disponible</span>
+            </span>
+          )}
+          {stockLevel === 'low' && (
+            <span className="inline-flex items-center gap-1.5 bg-amber-50/95 backdrop-blur-xs px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-800 border border-amber-300 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              <span>Pocas unidades</span>
+            </span>
+          )}
+          {stockLevel === 'out' && (
+            <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-xs px-2.5 py-0.5 rounded-full text-[10px] font-bold text-rose-700 border border-rose-200 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-rose-500" />
+              <span>Agotado</span>
+            </span>
+          )}
+        </div>
+
         {/* Promo Floating Tag on photo (left) */}
-        {promotion && (
+        {promotion && !isOut && (
           <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
             <span className={`inline-flex items-center gap-1 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-black shadow-md border ${
               promotion.season_tag === 'vencimiento'
@@ -121,11 +170,12 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
           </div>
         )}
 
-        {/* Out of Stock Overlay */}
-        {!product.in_stock && (
-          <div className="absolute inset-0 bg-[#261C30]/75 backdrop-blur-xs flex items-center justify-center">
-            <span className="bg-white/90 text-[#261C30] font-black text-xs px-3 py-1.5 rounded-full uppercase tracking-wider shadow">
-              Agotado Temporalmente
+        {/* Out of Stock Center Ribbon */}
+        {isOut && (
+          <div className="absolute inset-0 bg-gray-900/20 backdrop-blur-[1px] flex items-center justify-center">
+            <span className="bg-gray-800/90 text-white font-black text-[11px] px-3.5 py-1.5 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-rose-500" />
+              Agotado
             </span>
           </div>
         )}
@@ -136,32 +186,40 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
         <div className="space-y-1.5">
           {/* Category & Korean Subtitle */}
           <div className="h-4 flex items-center justify-between text-[10px] text-[#867894] overflow-hidden">
-            <span className="font-semibold uppercase tracking-wider truncate max-w-[120px]">
+            <span className={`font-semibold uppercase tracking-wider truncate max-w-[120px] ${isOut ? 'text-gray-400' : ''}`}>
               {product.category_name || 'Coreano'}
             </span>
             {product.korean_name && (
-              <span className="font-medium text-[#9368B7] bg-[#EFE6F7] px-1.5 py-0.2 rounded text-[9px] truncate max-w-[100px]">
+              <span className={`font-medium px-1.5 py-0.2 rounded text-[9px] truncate max-w-[100px] ${
+                isOut ? 'text-gray-500 bg-gray-200/70' : 'text-[#9368B7] bg-[#EFE6F7]'
+              }`}>
                 {product.korean_name}
               </span>
             )}
           </div>
 
           {/* Product Name (Uniform 2-line height) */}
-          <h3 className="h-10 font-bold text-xs sm:text-sm text-[#261C30] leading-snug line-clamp-2 group-hover:text-[#9368B7] transition-colors flex items-start">
+          <h3 className={`h-10 font-bold text-xs sm:text-sm leading-snug line-clamp-2 transition-colors flex items-start ${
+            isOut ? 'text-gray-500' : 'text-[#261C30] group-hover:text-[#9368B7]'
+          }`}>
             {product.name}
           </h3>
 
           {/* Description snippet (Uniform 2-line height) */}
-          <p className="h-8 text-[11px] text-[#6B5E78] line-clamp-2 leading-snug overflow-hidden">
+          <p className={`h-8 text-[11px] line-clamp-2 leading-snug overflow-hidden ${
+            isOut ? 'text-gray-400' : 'text-[#6B5E78]'
+          }`}>
             {product.description}
           </p>
         </div>
 
         {/* Price and Add Button */}
-        <div className="pt-2 border-t border-[#F3EDF8] flex items-center justify-between gap-2">
+        <div className={`pt-2 border-t flex items-center justify-between gap-2 ${
+          isOut ? 'border-gray-200' : 'border-[#F3EDF8]'
+        }`}>
           <div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-base sm:text-lg font-black text-[#261C30]">
+              <span className={`text-base sm:text-lg font-black ${isOut ? 'text-gray-400' : 'text-[#261C30]'}`}>
                 {settings.currency_symbol} {product.price.toFixed(2)}
               </span>
               {product.original_price && product.original_price > product.price && (
@@ -171,7 +229,9 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
               )}
             </div>
             {product.unit && (
-              <span className="text-[10px] text-[#867894] font-medium block truncate max-w-[100px]">
+              <span className={`text-[10px] font-medium block truncate max-w-[100px] ${
+                isOut ? 'text-gray-400' : 'text-[#867894]'
+              }`}>
                 {product.unit}
               </span>
             )}
@@ -180,16 +240,18 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
           {/* Add to Cart Button */}
           <button
             onClick={handleAdd}
-            disabled={!product.in_stock}
+            disabled={isOut}
             className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-black transition-all duration-200 shadow-sm ${
-              !product.in_stock
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              isOut
+                ? 'bg-gray-200 text-gray-500 cursor-not-allowed shadow-none'
                 : justAdded
                 ? 'bg-emerald-500 text-white scale-105'
                 : 'bg-[#9368B7] hover:bg-[#7E52A3] text-white hover:scale-105 active:scale-95 shadow-[#9368B7]/20'
             }`}
           >
-            {justAdded ? (
+            {isOut ? (
+              <span>Agotado</span>
+            ) : justAdded ? (
               <>
                 <Check className="w-3.5 h-3.5" />
                 <span>¡Listo!</span>

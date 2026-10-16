@@ -46,6 +46,13 @@ export default function ProductDetailModal({ product, onClose }: ProductDetailMo
     }, 900);
   };
 
+  const stockLevel: 'available' | 'low' | 'out' = !product.in_stock || product.stock_quantity === 0
+    ? 'out'
+    : product.stock_quantity !== undefined && product.stock_quantity <= 5
+    ? 'low'
+    : 'available';
+  const isOut = stockLevel === 'out';
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-[#261C30]/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div 
@@ -61,7 +68,7 @@ export default function ProductDetailModal({ product, onClose }: ProductDetailMo
         </button>
 
         {/* Top Promo Announcement if active */}
-        {promotion && (
+        {promotion && !isOut && (
           <div className="bg-gradient-to-r from-[#9368B7] via-[#FF6B8B] to-[#9368B7] text-white px-4 py-2 text-xs font-black flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <Star className="w-4 h-4 text-amber-300 fill-amber-300 animate-spin" style={{ animationDuration: '4s' }} />
@@ -74,28 +81,51 @@ export default function ProductDetailModal({ product, onClose }: ProductDetailMo
         )}
 
         {/* Product Image */}
-        <div className="relative aspect-video w-full bg-[#FAF8F5] p-6 flex items-center justify-center">
+        <div className={`relative aspect-video w-full p-6 flex items-center justify-center ${
+          isOut ? 'bg-gray-100' : 'bg-[#FAF8F5]'
+        }`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={product.image_url}
             alt={product.name}
-            className="h-full object-contain filter drop-shadow-md"
+            className={`h-full object-contain filter drop-shadow-md ${isOut ? 'grayscale opacity-60' : ''}`}
           />
         </div>
 
         {/* Content */}
         <div className="p-5 sm:p-6 space-y-4">
           <div>
-            <div className="flex items-center gap-2 text-xs text-[#867894] mb-1">
-              <span className="font-bold uppercase tracking-wider text-[#9368B7]">
-                {product.category_name}
-              </span>
-              {product.code && (
-                <span>• SKU: {product.code}</span>
+            <div className="flex items-center justify-between gap-2 text-xs text-[#867894] mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className="font-bold uppercase tracking-wider text-[#9368B7]">
+                  {product.category_name}
+                </span>
+                {product.code && (
+                  <span>• SKU: {product.code}</span>
+                )}
+              </div>
+
+              {stockLevel === 'available' && (
+                <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span>Disponible</span>
+                </span>
+              )}
+              {stockLevel === 'low' && (
+                <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-300 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  <span>Pocas unidades</span>
+                </span>
+              )}
+              {stockLevel === 'out' && (
+                <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+                  <span className="w-2 h-2 rounded-full bg-rose-500" />
+                  <span>Agotado</span>
+                </span>
               )}
             </div>
 
-            <h2 className="text-xl font-black text-[#261C30] leading-tight">
+            <h2 className={`text-xl font-black leading-tight ${isOut ? 'text-gray-500' : 'text-[#261C30]'}`}>
               {product.name}
             </h2>
 
@@ -111,7 +141,7 @@ export default function ProductDetailModal({ product, onClose }: ProductDetailMo
           </p>
 
           {/* Promotional Description Info */}
-          {promotion && (
+          {promotion && !isOut && (
             <div className="bg-[#FAF4FC] border border-[#EADBEE] rounded-2xl p-3 flex items-start gap-2 text-xs">
               <Flame className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
               <div>
@@ -128,7 +158,7 @@ export default function ProductDetailModal({ product, onClose }: ProductDetailMo
           {/* Price, Stepper and CTA */}
           <div className="pt-3 border-t border-[#F3EDF8] flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-              <span className="text-2xl font-black text-[#261C30]">
+              <span className={`text-2xl font-black ${isOut ? 'text-gray-400' : 'text-[#261C30]'}`}>
                 {settings.currency_symbol} {(product.price * quantity).toFixed(2)}
               </span>
               <span className="text-xs text-[#867894] block">
@@ -138,40 +168,44 @@ export default function ProductDetailModal({ product, onClose }: ProductDetailMo
 
             <div className="flex items-center gap-3 w-full sm:w-auto">
               {/* Stepper */}
-              <div className="flex items-center border border-[#EADBEE] rounded-xl p-1 bg-[#FAF8F5]">
-                <button
-                  type="button"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[#544660] hover:bg-white"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <span className="w-8 text-center font-bold text-sm text-[#261C30]">
-                  {quantity}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[#544660] hover:bg-white"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
+              {!isOut && (
+                <div className="flex items-center border border-[#EADBEE] rounded-xl p-1 bg-[#FAF8F5]">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[#544660] hover:bg-white"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="w-8 text-center font-bold text-sm text-[#261C30]">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[#544660] hover:bg-white"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
 
               {/* Add to Cart */}
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={!product.in_stock}
+                disabled={isOut}
                 className={`flex-1 sm:flex-none px-6 py-3 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all ${
-                  !product.in_stock
+                  isOut
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     : added
                     ? 'bg-emerald-500 text-white'
                     : 'bg-[#9368B7] hover:bg-[#7E52A3] text-white shadow-lg shadow-[#9368B7]/30'
                 }`}
               >
-                {added ? (
+                {isOut ? (
+                  <span>Agotado</span>
+                ) : added ? (
                   <>
                     <Check className="w-4 h-4" />
                     <span>¡Agregado!</span>
