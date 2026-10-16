@@ -91,9 +91,14 @@ export default function Footer() {
 
         {/* Bottom Credits */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-[#867894] gap-3">
-          <p className="flex items-center gap-1">
-            © 2026 {settings.store_name}. Hecho con 
-            <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 inline" /> para los fans del K-lifestyle.
+          <p className="flex items-center gap-1 flex-wrap">
+            © 2026 {settings.store_name} • Desarrollado por{' '}
+            <a 
+              href="mailto:alexis.salvador.espinoza@gmail.com" 
+              className="text-[#9368B7] font-semibold hover:underline"
+            >
+              alexis.salvador.espinoza@gmail.com
+            </a>
           </p>
           <p className="text-[11px] text-[#9D91A8]">
             Jr. Crespo Castillo 614 • Huánuco

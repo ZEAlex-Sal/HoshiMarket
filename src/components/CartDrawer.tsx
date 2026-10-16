@@ -140,7 +140,7 @@ export default function CartDrawer() {
       }
     );
 
-    const whatsappUrl = `https://wa.me/${settings.whatsapp_number}?text=${encodedMessage}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${settings.whatsapp_number}&text=${encodedMessage}`;
     window.open(whatsappUrl, '_blank');
   };
 

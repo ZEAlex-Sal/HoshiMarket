@@ -93,9 +93,9 @@ export function formatWhatsAppMessage(
   const totalFinal = cartItems.reduce((acc, item) => acc + item.final_subtotal, 0);
 
   const lines: string[] = [];
-  lines.push(`✨ *¡Hola ${settings.store_name}!* 🥢 Deseo realizar el siguiente pedido:`);
+  lines.push(`*¡Hola ${settings.store_name}!* Deseo realizar el siguiente pedido:`);
   lines.push('');
-  lines.push('🛒 *DETALLE DEL PEDIDO:*');
+  lines.push('*DETALLE DEL PEDIDO:*');
 
   cartItems.forEach((item, index) => {
     const promoNote = item.applied_promotion ? ` [${item.applied_promotion.badge_text}]` : '';
@@ -104,45 +104,45 @@ export function formatWhatsAppMessage(
     );
     if (item.discount_amount > 0) {
       lines.push(
-        `   ↳ Subtotal: ~${settings.currency_symbol} ${item.subtotal.toFixed(2)}~ → *${settings.currency_symbol} ${item.final_subtotal.toFixed(2)}* (Ahorro: -${settings.currency_symbol} ${item.discount_amount.toFixed(2)})`
+        `   - Subtotal: ~${settings.currency_symbol} ${item.subtotal.toFixed(2)}~ → *${settings.currency_symbol} ${item.final_subtotal.toFixed(2)}* (Ahorro: -${settings.currency_symbol} ${item.discount_amount.toFixed(2)})`
       );
     } else {
       lines.push(
-        `   ↳ Subtotal: *${settings.currency_symbol} ${item.final_subtotal.toFixed(2)}*`
+        `   - Subtotal: *${settings.currency_symbol} ${item.final_subtotal.toFixed(2)}*`
       );
     }
   });
 
   lines.push('');
-  lines.push('━━━━━━━━━━━━━━━━━━━━');
+  lines.push('----------------------------------------');
   if (totalSavings > 0) {
-    lines.push(`💰 *Total Bruto:* ${settings.currency_symbol} ${totalOriginal.toFixed(2)}`);
-    lines.push(`🎉 *Total Ahorro (Promociones):* -${settings.currency_symbol} ${totalSavings.toFixed(2)}`);
+    lines.push(`*Total Bruto:* ${settings.currency_symbol} ${totalOriginal.toFixed(2)}`);
+    lines.push(`*Total Ahorro (Promos):* -${settings.currency_symbol} ${totalSavings.toFixed(2)}`);
   }
-  lines.push(`✨ *TOTAL A PAGAR: ${settings.currency_symbol} ${totalFinal.toFixed(2)}*`);
-  lines.push('━━━━━━━━━━━━━━━━━━━━');
+  lines.push(`*TOTAL A PAGAR: ${settings.currency_symbol} ${totalFinal.toFixed(2)}*`);
+  lines.push('----------------------------------------');
   lines.push('');
 
-  lines.push('📍 *DATOS DE ENTREGA:*');
-  lines.push(`• *Cliente:* ${customerData.name.trim() || 'Cliente'}`);
+  lines.push('*DATOS DE ENTREGA:*');
+  lines.push(`- *Cliente:* ${customerData.name.trim() || 'Cliente'}`);
   if (customerData.deliveryType === 'delivery') {
     const serviceName = customerData.deliveryService === 'llamafood'
-      ? '🦙 Llamafood Express (Huánuco)'
-      : '🛵 Delivery Local Huánuco';
-    lines.push(`• *Modalidad:* Delivery a Domicilio (${serviceName})`);
+      ? 'Llamafood Express (Huánuco)'
+      : 'Delivery Local Huánuco';
+    lines.push(`- *Modalidad:* Delivery a Domicilio (${serviceName})`);
     if (customerData.deliveryZone) {
-      lines.push(`• *Zona de Huánuco:* ${customerData.deliveryZone}`);
+      lines.push(`- *Zona de Huánuco:* ${customerData.deliveryZone}`);
     }
-    lines.push(`• *Dirección:* ${customerData.address || 'Por coordinar'}`);
+    lines.push(`- *Dirección:* ${customerData.address || 'Por coordinar'}`);
   } else {
-    lines.push(`• *Modalidad:* 🏪 Recojo en Tienda (${settings.address})`);
+    lines.push(`- *Modalidad:* Recojo en Tienda (${settings.address})`);
   }
-  lines.push(`• *Método de Pago:* ${customerData.paymentMethod}`);
+  lines.push(`- *Método de Pago:* ${customerData.paymentMethod}`);
   if (customerData.notes && customerData.notes.trim()) {
-    lines.push(`• *Nota adicional:* ${customerData.notes.trim()}`);
+    lines.push(`- *Nota adicional:* ${customerData.notes.trim()}`);
   }
   lines.push('');
-  lines.push('¿Me confirman la disponibilidad para proceder con el pago? ¡Muchas gracias! 💖');
+  lines.push('¿Me confirman la disponibilidad para proceder con el pago? ¡Muchas gracias!');
 
   return encodeURIComponent(lines.join('\n'));
 }

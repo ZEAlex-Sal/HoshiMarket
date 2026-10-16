@@ -36,6 +36,12 @@ interface StoreContextType {
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
 
+  // Cloud Synchronization (Supabase)
+  cloudSyncStatus: 'checking' | 'connected' | 'offline' | 'tables_needed';
+  isSyncing: boolean;
+  syncAllToCloud: () => Promise<{ success: boolean; message: string }>;
+  reloadFromCloud: () => Promise<void>;
+
   // Admin CRUD Products
   addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
   updateProduct: (id: string, updates: Partial<Product>) => Promise<void>;
@@ -80,7 +86,91 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
 
-  // Initialize from LocalStorage if available
+  // Cloud synchronization status
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<'checking' | 'connected' | 'offline' | 'tables_needed'>('checking');
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
+  // Helper to attach custom headers if Supabase was configured via admin panel
+  const getCustomHeaders = () => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (typeof window !== 'undefined') {
+      const customUrl = localStorage.getItem('hoshi_custom_supabase_url');
+      const customKey = localStorage.getItem('hoshi_custom_supabase_key');
+      if (customUrl) headers['x-supabase-url'] = customUrl;
+      if (customKey) headers['x-supabase-key'] = customKey;
+    }
+    return headers;
+  };
+
+  // Fetch latest data from cloud (/api/store)
+  const reloadFromCloud = async () => {
+    try {
+      const res = await fetch('/api/store', {
+        headers: getCustomHeaders()
+      });
+      const data = await res.json();
+      if (data.connected && data.tablesReady) {
+        if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+          setProducts(data.products);
+          saveProducts(data.products);
+        }
+        if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
+          setCategories(data.categories);
+          saveCategories(data.categories);
+        }
+        if (data.promotions && Array.isArray(data.promotions) && data.promotions.length > 0) {
+          setPromotions(data.promotions);
+          savePromotions(data.promotions);
+        }
+        if (data.settings) {
+          setSettings(prev => ({ ...prev, ...data.settings }));
+          try {
+            localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify({ ...INITIAL_SETTINGS, ...data.settings }));
+          } catch {}
+        }
+        setCloudSyncStatus('connected');
+      } else if (data.connected && data.tablesReady === false) {
+        setCloudSyncStatus('tables_needed');
+      } else {
+        setCloudSyncStatus('offline');
+      }
+    } catch {
+      setCloudSyncStatus('offline');
+    }
+  };
+
+  // Full manual sync of local products and settings to Supabase
+  const syncAllToCloud = async () => {
+    try {
+      setIsSyncing(true);
+      const res = await fetch('/api/store', {
+        method: 'POST',
+        headers: getCustomHeaders(),
+        body: JSON.stringify({
+          action: 'sync_all',
+          payload: {
+            products,
+            categories,
+            promotions,
+            settings
+          }
+        })
+      });
+      const data = await res.json();
+      setIsSyncing(false);
+      if (data.success) {
+        setCloudSyncStatus('connected');
+        return { success: true, message: '¡Productos y catálogo sincronizados con éxito en la nube!' };
+      } else {
+        return { success: false, message: data.error || 'No se pudo sincronizar con Supabase' };
+      }
+    } catch (err: any) {
+      setIsSyncing(false);
+      return { success: false, message: err?.message || 'Error de conexión con el servidor' };
+    }
+  };
+
+  // Initialize from LocalStorage and Cloud
   useEffect(() => {
     try {
       const savedProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
@@ -103,9 +193,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       const savedCart = localStorage.getItem(STORAGE_KEYS.CART);
       if (savedCart) setCart(JSON.parse(savedCart));
-    } catch {
-      // Local storage unavailable or SSR fallback
-    }
+    } catch {}
+
+    // Fetch latest cloud state
+    reloadFromCloud();
+
+    // Revalidate when user focuses or returns to window
+    const handleFocus = () => {
+      reloadFromCloud();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Periodic background sync (every 25 seconds if page visible)
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        reloadFromCloud();
+      }
+    }, 25000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
   }, []);
 
   // Sync state changes to localStorage
@@ -229,11 +338,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       created_at: new Date().toISOString()
     };
     saveProducts([newProduct, ...products]);
+
+    fetch('/api/store', {
+      method: 'POST',
+      headers: getCustomHeaders(),
+      body: JSON.stringify({ action: 'add_product', payload: newProduct })
+    }).catch(() => {});
   };
 
   const updateProduct = async (id: string, updates: Partial<Product>) => {
     const updated = products.map(p => p.id === id ? { ...p, ...updates } : p);
     saveProducts(updated);
+
+    fetch('/api/store', {
+      method: 'POST',
+      headers: getCustomHeaders(),
+      body: JSON.stringify({ action: 'update_product', payload: { id, updates } })
+    }).catch(() => {});
 
     // Also update cart if product price or promo changed
     const updatedCart = cart.map(item => {
@@ -259,6 +380,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const updated = products.filter(p => p.id !== id);
     saveProducts(updated);
     removeFromCart(id);
+
+    fetch('/api/store', {
+      method: 'POST',
+      headers: getCustomHeaders(),
+      body: JSON.stringify({ action: 'delete_product', payload: { id } })
+    }).catch(() => {});
   };
 
   // Admin: Categories CRUD
@@ -274,16 +401,34 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       is_active: true
     };
     saveCategories([...categories, newCategory]);
+
+    fetch('/api/store', {
+      method: 'POST',
+      headers: getCustomHeaders(),
+      body: JSON.stringify({ action: 'add_category', payload: newCategory })
+    }).catch(() => {});
   };
 
   const updateCategory = async (id: string, updates: Partial<Category>) => {
     const updated = categories.map(c => c.id === id ? { ...c, ...updates } : c);
     saveCategories(updated);
+
+    fetch('/api/store', {
+      method: 'POST',
+      headers: getCustomHeaders(),
+      body: JSON.stringify({ action: 'update_category', payload: { id, updates } })
+    }).catch(() => {});
   };
 
   const deleteCategory = async (id: string) => {
     const updated = categories.filter(c => c.id !== id);
     saveCategories(updated);
+
+    fetch('/api/store', {
+      method: 'POST',
+      headers: getCustomHeaders(),
+      body: JSON.stringify({ action: 'delete_category', payload: { id } })
+    }).catch(() => {});
   };
 
   // Admin: Promotions CRUD
@@ -294,6 +439,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
     const updatedPromos = [...promotions, newPromo];
     savePromotions(updatedPromos);
+
+    fetch('/api/store', {
+      method: 'POST',
+      headers: getCustomHeaders(),
+      body: JSON.stringify({ action: 'add_promotion', payload: newPromo })
+    }).catch(() => {});
 
     // Assign promotion to products if product_ids specified
     if (newPromo.product_ids && newPromo.product_ids.length > 0) {
@@ -310,6 +461,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const updatePromotion = async (id: string, updates: Partial<Promotion>) => {
     const updatedPromos = promotions.map(p => p.id === id ? { ...p, ...updates } : p);
     savePromotions(updatedPromos);
+
+    fetch('/api/store', {
+      method: 'POST',
+      headers: getCustomHeaders(),
+      body: JSON.stringify({ action: 'update_promotion', payload: { id, updates } })
+    }).catch(() => {});
 
     // If active state changed or product assignment changed
     if (updates.product_ids) {
@@ -330,6 +487,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     savePromotions(updatedPromos);
     const updatedProducts = products.map(p => p.promotion_id === id ? { ...p, promotion_id: undefined } : p);
     saveProducts(updatedProducts);
+
+    fetch('/api/store', {
+      method: 'POST',
+      headers: getCustomHeaders(),
+      body: JSON.stringify({ action: 'delete_promotion', payload: { id } })
+    }).catch(() => {});
   };
 
   // Sync from Billing Excel / CSV
@@ -383,11 +546,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
 
     saveProducts(currentProducts);
+
+    // Sync imported products to cloud
+    fetch('/api/store', {
+      method: 'POST',
+      headers: getCustomHeaders(),
+      body: JSON.stringify({ action: 'sync_all', payload: { products: currentProducts, categories, promotions, settings } })
+    }).catch(() => {});
+
     return { updated: updatedCount, created: createdCount };
   };
 
   const updateSettings = (updates: Partial<StoreSettings>) => {
-    saveSettings({ ...settings, ...updates });
+    const newSettings = { ...settings, ...updates };
+    saveSettings(newSettings);
+
+    fetch('/api/store', {
+      method: 'POST',
+      headers: getCustomHeaders(),
+      body: JSON.stringify({ action: 'update_settings', payload: newSettings })
+    }).catch(() => {});
   };
 
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -408,6 +586,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       totalCartItems,
       cartTotal,
       cartTotalSavings,
+      cloudSyncStatus,
+      isSyncing,
+      syncAllToCloud,
+      reloadFromCloud,
       setSelectedCategory,
       setSelectedSeason,
       setSearchQuery,

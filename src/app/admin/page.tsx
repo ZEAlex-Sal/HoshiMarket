@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useStore } from '@/context/store-context';
 import { Product, Promotion, Category, PromoType, SeasonCampaign } from '@/types';
@@ -55,13 +55,28 @@ export default function AdminPage() {
     updatePromotion,
     deletePromotion,
     importProductsFromExcel,
-    updateSettings 
+    updateSettings,
+    cloudSyncStatus,
+    isSyncing,
+    syncAllToCloud,
+    reloadFromCloud
   } = useStore();
 
-  // Authentication gate
+  // Authentication gate with session persistence across page refreshes
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pinCode, setPinCode] = useState('');
   const [authError, setAuthError] = useState('');
+  const [syncMessage, setSyncMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  // Check persisted session on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const session = localStorage.getItem('hoshi_admin_session');
+      if (session === 'active') {
+        setIsAuthenticated(true);
+      }
+    }
+  }, []);
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'promotions' | 'excel' | 'settings'>('products');
@@ -163,15 +178,26 @@ export default function AdminPage() {
     reader.readAsDataURL(file);
   };
 
-  // Handle PIN authentication (Default: 6140 or hoshi2026 - Crespo Castillo 614)
+  // Handle PIN authentication
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (pinCode === 'hoshi2026' || pinCode === '6140' || pinCode === 'admin') {
       setIsAuthenticated(true);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('hoshi_admin_session', 'active');
+      }
       setAuthError('');
     } else {
-      setAuthError('Código de seguridad incorrecto. Intenta con "hoshi2026" o "6140"');
+      setAuthError('Código de seguridad incorrecto.');
     }
+  };
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('hoshi_admin_session');
+    }
+    setIsAuthenticated(false);
+    setPinCode('');
   };
 
   // Open Product Modal
@@ -377,24 +403,24 @@ export default function AdminPage() {
           </div>
 
           <div>
-            <span className="text-xs font-bold text-[#9368B7] bg-[#EFE6F7] px-2.5 py-1 rounded-full uppercase">
-              Acceso Administrativo
+            <span className="text-xs font-bold text-[#9368B7] bg-[#EFE6F7] px-3 py-1 rounded-full uppercase tracking-wider">
+              Panel de Acceso
             </span>
             <h2 className="text-2xl font-black text-[#261C30] mt-2">
               Hoshi Market • Huánuco
             </h2>
             <p className="text-xs text-[#6B5E78] mt-1">
-              Ingresa el PIN de seguridad del dueño para administrar el catálogo, promociones e inventario.
+              Ingresa el PIN de seguridad para acceder a la administración del catálogo e inventario.
             </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <input
               type="password"
-              placeholder="PIN de acceso (ej. hoshi2026 o 6140)"
+              placeholder="PIN de seguridad"
               value={pinCode}
               onChange={(e) => setPinCode(e.target.value)}
-              className="w-full text-center text-lg tracking-widest bg-[#FAF8F5] border border-[#EADBEE] rounded-2xl py-3 px-4 text-[#261C30] focus:ring-2 focus:ring-[#9368B7] focus:outline-none"
+              className="w-full text-center text-lg tracking-widest bg-[#FAF8F5] border border-[#EADBEE] rounded-2xl py-3 px-4 text-[#261C30] focus:ring-2 focus:ring-[#9368B7] focus:outline-none shadow-xs"
               autoFocus
             />
 
@@ -435,40 +461,63 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#FAF8F5] flex flex-col">
       {/* Top Admin Header */}
-      <header className="bg-white border-b border-[#EADBEE] sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className="bg-white border-b border-[#EADBEE] sticky top-0 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-3">
+          {/* Brand info */}
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-2xl bg-[#FFF9F2] p-1 border border-[#EADBEE] flex-shrink-0 shadow-xs flex items-center justify-center overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logo.png" alt="Hoshi Market" className="w-full h-full object-contain" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-black text-[#261C30]">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-base sm:text-lg font-black text-[#261C30] whitespace-nowrap">
                   Panel de Administración
                 </h1>
-                <span className="text-[10px] bg-[#9368B7] text-white px-2 py-0.5 rounded-full font-bold">
+                <span className="text-[10px] bg-[#9368B7] text-white px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
                   Hoshi Market
                 </span>
               </div>
-              <p className="text-xs text-[#867894]">
+              <p className="text-xs text-[#867894] truncate">
                 Jr. Crespo Castillo 614, Huánuco
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Right actions: Cloud badge, Live Web, Logout */}
+          <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
+            {/* Cloud Sync Status Indicator */}
+            <div className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border whitespace-nowrap ${
+              cloudSyncStatus === 'connected' 
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : cloudSyncStatus === 'tables_needed'
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-[#FAF8F5] text-[#867894] border-[#EADBEE]'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${
+                cloudSyncStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'
+              }`} />
+              <span>
+                {cloudSyncStatus === 'connected' 
+                  ? 'Nube Sincronizada' 
+                  : cloudSyncStatus === 'tables_needed'
+                  ? 'Falta Ejecutar SQL'
+                  : 'Modo Local'}
+              </span>
+            </div>
+
             <Link
               href="/"
               target="_blank"
-              className="text-xs font-bold text-[#9368B7] hover:bg-[#EFE6F7] px-3 py-1.5 rounded-xl border border-[#D8C3E5] flex items-center gap-1.5 transition-colors"
+              className="text-xs font-bold text-[#9368B7] hover:bg-[#EFE6F7] px-3.5 py-2 rounded-xl border border-[#D8C3E5] flex items-center gap-1.5 transition-colors whitespace-nowrap flex-shrink-0 shadow-xs"
             >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>Ver Web en vivo</span>
+              <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="whitespace-nowrap font-bold">Ver Web en vivo</span>
             </Link>
+
             <button
-              onClick={() => setIsAuthenticated(false)}
-              className="text-xs text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200 transition-colors"
+              onClick={handleLogout}
+              className="text-xs font-bold text-rose-600 hover:bg-rose-50 px-3.5 py-2 rounded-xl border border-rose-200 transition-colors whitespace-nowrap flex-shrink-0 shadow-xs"
             >
               Cerrar Sesión
             </button>
@@ -1001,6 +1050,75 @@ export default function AdminPage() {
                   placeholder="Revisa nuestro catálogo de más de 500 productos coreanos originales..."
                   className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] resize-none"
                 />
+              </div>
+
+              {/* Sincronización en la Nube (Supabase) */}
+              <div className="pt-5 border-t border-[#F3EDF8] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-black text-sm text-[#261C30] flex items-center gap-2">
+                      <span>Sincronización en la Nube (Multi-Dispositivo)</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                        cloudSyncStatus === 'connected'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : cloudSyncStatus === 'tables_needed'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {cloudSyncStatus === 'connected' ? '🟢 Conectado a Supabase' : cloudSyncStatus === 'tables_needed' ? '⚠️ Tablas no creadas' : '☁️ Modo Local'}
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-[#6B5E78] mt-0.5">
+                      Permite que todos los productos, fotos y promociones creados se actualicen en tiempo real en celulares, laptops y para todos los clientes en la web.
+                    </p>
+                  </div>
+                </div>
+
+                {syncMessage && (
+                  <div className={`p-3 rounded-xl text-xs font-bold flex items-center justify-between ${
+                    syncMessage.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+                  }`}>
+                    <span>{syncMessage.text}</span>
+                    <button onClick={() => setSyncMessage(null)} className="text-xs ml-2 hover:opacity-70">✕</button>
+                  </div>
+                )}
+
+                <div className="bg-[#FAF8F5] p-3.5 rounded-2xl border border-[#EADBEE] space-y-2.5">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div>
+                      <span className="font-bold text-xs text-[#261C30] block">
+                        Subir y sincronizar catálogo de esta laptop a la Nube
+                      </span>
+                      <span className="text-[10px] text-[#867894]">
+                        {products.length} productos listos para sincronizar
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isSyncing}
+                      onClick={async () => {
+                        const res = await syncAllToCloud();
+                        setSyncMessage({
+                          text: res.message,
+                          type: res.success ? 'success' : 'error'
+                        });
+                      }}
+                      className="w-full sm:w-auto bg-[#9368B7] hover:bg-[#7E52A3] text-white px-4 py-2 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                      <span>{isSyncing ? 'Sincronizando...' : 'Subir a la Nube Ahora'}</span>
+                    </button>
+                  </div>
+
+                  {cloudSyncStatus === 'tables_needed' && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-1">
+                      <p className="font-bold">⚠️ Falta ejecutar el script SQL en Supabase:</p>
+                      <p className="text-[11px]">
+                        Entra a tu panel de Supabase &gt; <strong>SQL Editor</strong>, abre el archivo <code>supabase/schema.sql</code> de este proyecto, pega el código y pulsa <strong>Run</strong>. Luego vuelve aquí y pulsa &quot;Subir a la Nube Ahora&quot;.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
