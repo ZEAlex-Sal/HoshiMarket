@@ -62,6 +62,7 @@ export default function AdminPage() {
     importProductsFromExcel,
     updateSettings,
     cloudSyncStatus,
+    cloudErrorDetail,
     isSyncing,
     syncAllToCloud,
     reloadFromCloud
@@ -1136,6 +1137,12 @@ export default function AdminPage() {
                           <p className="text-[11px] text-amber-800 mt-1 leading-relaxed">
                             Al conectar un proyecto nuevo de Supabase, este viene en blanco sin tablas. Para que cada cambio que hagas se actualice <strong>automáticamente en tiempo real en cualquier celular y para todos los clientes</strong>, copia el código con el botón de abajo, pégalo en tu Supabase SQL Editor y dale a <strong>Run</strong>. ¡Solo se hace esta única vez en la vida del proyecto!
                           </p>
+                          {cloudErrorDetail && (
+                            <div className="mt-2 bg-amber-100/90 border border-amber-300/80 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-950 flex items-center gap-1.5 break-all">
+                              <span className="font-bold flex-shrink-0">Detalle de Supabase:</span>
+                              <span>{cloudErrorDetail}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
 

@@ -38,6 +38,7 @@ interface StoreContextType {
 
   // Cloud Synchronization (Supabase)
   cloudSyncStatus: 'checking' | 'connected' | 'offline' | 'tables_needed';
+  cloudErrorDetail?: string;
   isSyncing: boolean;
   syncAllToCloud: () => Promise<{ success: boolean; message: string }>;
   reloadFromCloud: () => Promise<void>;
@@ -88,6 +89,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Cloud synchronization status
   const [cloudSyncStatus, setCloudSyncStatus] = useState<'checking' | 'connected' | 'offline' | 'tables_needed'>('checking');
+  const [cloudErrorDetail, setCloudErrorDetail] = useState<string>('');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   // Helper to attach custom headers if Supabase was configured via admin panel
@@ -129,13 +131,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           } catch {}
         }
         setCloudSyncStatus('connected');
+        setCloudErrorDetail('');
       } else if (data.connected && data.tablesReady === false) {
         setCloudSyncStatus('tables_needed');
+        setCloudErrorDetail(data.error || 'Tablas no encontradas en Supabase');
       } else {
         setCloudSyncStatus('offline');
+        setCloudErrorDetail(data.error || data.message || 'No conectado a Supabase');
       }
-    } catch {
+    } catch (err: any) {
       setCloudSyncStatus('offline');
+      setCloudErrorDetail(err?.message || 'Error de conexión');
     }
   };
 
@@ -587,6 +593,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       cartTotal,
       cartTotalSavings,
       cloudSyncStatus,
+      cloudErrorDetail,
       isSyncing,
       syncAllToCloud,
       reloadFromCloud,
