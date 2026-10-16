@@ -40,13 +40,18 @@ const HOSHI_HERO_MARKER = '###HOSHI_HERO###';
 function packSettingsForDb(s: any) {
   const heroTitle = s.hero_title || '';
   const heroSubtitle = s.hero_subtitle || '';
+  const pageViews = typeof s.page_views === 'number' ? s.page_views : (Number(s.page_views) || 0);
   
   let bannerText = s.announcement_banner || '¡Bienvenidos a Hoshi Market! Envíos en Huánuco y recojo en Jr. Crespo Castillo 614.';
   if (bannerText.includes(HOSHI_HERO_MARKER)) {
     bannerText = bannerText.split(HOSHI_HERO_MARKER)[0].trim();
   }
 
-  const packedBanner = `${bannerText}\n${HOSHI_HERO_MARKER}\n${JSON.stringify({ hero_title: heroTitle, hero_subtitle: heroSubtitle })}`;
+  const packedBanner = `${bannerText}\n${HOSHI_HERO_MARKER}\n${JSON.stringify({ 
+    hero_title: heroTitle, 
+    hero_subtitle: heroSubtitle,
+    page_views: pageViews
+  })}`;
 
   return {
     id: 1,
@@ -75,6 +80,7 @@ function unpackSettingsFromDb(dbSettings: any) {
       const meta = JSON.parse(parts[1].trim());
       if (meta.hero_title !== undefined) unpacked.hero_title = meta.hero_title;
       if (meta.hero_subtitle !== undefined) unpacked.hero_subtitle = meta.hero_subtitle;
+      if (meta.page_views !== undefined) unpacked.page_views = Number(meta.page_views) || 0;
     } catch {}
   }
   return unpacked;
@@ -473,7 +479,18 @@ export async function POST(request: Request) {
       }
 
       case 'update_settings': {
-        const packed = packSettingsForDb(payload);
+        let currentViews = Number(payload.page_views) || 0;
+        try {
+          const { data: cur } = await supabase.from('store_settings').select('announcement_banner').eq('id', 1).maybeSingle();
+          if (cur?.announcement_banner && cur.announcement_banner.includes(HOSHI_HERO_MARKER)) {
+            const meta = JSON.parse(cur.announcement_banner.split(HOSHI_HERO_MARKER)[1].trim());
+            if (meta?.page_views) {
+              currentViews = Math.max(currentViews, Number(meta.page_views));
+            }
+          }
+        } catch {}
+
+        const packed = packSettingsForDb({ ...payload, page_views: currentViews });
         const { error } = await supabase.from('store_settings').upsert(packed);
         if (error) throw error;
         return NextResponse.json({ success: true });

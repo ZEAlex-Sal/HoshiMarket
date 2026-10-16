@@ -88,4 +88,5 @@ export interface StoreSettings {
   announcement_banner: string;
   hero_title?: string;
   hero_subtitle?: string;
+  page_views?: number;
 }

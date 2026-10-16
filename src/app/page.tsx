@@ -32,6 +32,21 @@ export default function Home() {
     reloadFromCloud();
   }, []);
 
+  // Registrar visualización única por sesión de cliente (no infla por recargas ni navegación interna)
+  React.useEffect(() => {
+    try {
+      const alreadyTracked = sessionStorage.getItem('hoshi_session_view');
+      if (!alreadyTracked) {
+        sessionStorage.setItem('hoshi_session_view', '1');
+        fetch('/api/views', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          keepalive: true
+        }).catch(() => {});
+      }
+    } catch {}
+  }, []);
+
   // Filtered products list
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {

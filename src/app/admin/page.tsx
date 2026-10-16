@@ -34,7 +34,8 @@ import {
   Database,
   Clock,
   Percent,
-  Gift
+  Gift,
+  Eye
 } from 'lucide-react';
 import { HOSHI_SUPABASE_SCHEMA } from '@/lib/supabase-schema-text';
 
@@ -87,6 +88,30 @@ export default function AdminPage() {
         setIsAuthenticated(true);
       }
     }
+  }, []);
+
+  // Live page views counter
+  const [viewsCount, setViewsCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchViews = async () => {
+      try {
+        const res = await fetch('/api/views');
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && typeof data.views === 'number') {
+            setViewsCount(data.views);
+          }
+        }
+      } catch {}
+    };
+    fetchViews();
+    const interval = setInterval(fetchViews, 25000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   // Active Tab
@@ -680,8 +705,20 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Right actions: Live Web, Logout */}
-          <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
+          {/* Right actions: Page Views, Live Web, Logout */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap flex-shrink-0">
+            {/* Contador discreto de visualizaciones */}
+            <div 
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#FAF8F5] border border-[#EADBEE] text-[#544660] text-xs shadow-xs select-none"
+              title="Total de visualizaciones del catálogo público"
+            >
+              <Eye className="w-3.5 h-3.5 text-[#9368B7]" />
+              <span className="text-[#867894] font-medium hidden sm:inline">Visitas:</span>
+              <span className="font-bold text-[#261C30]">
+                {(viewsCount ?? settings.page_views ?? 0).toLocaleString()}
+              </span>
+            </div>
+
             <Link
               href="/"
               target="_blank"
