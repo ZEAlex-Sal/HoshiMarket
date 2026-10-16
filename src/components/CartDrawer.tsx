@@ -30,36 +30,114 @@ interface HuanucoZone {
   name: string;
   district: string;
   reference?: string;
+  keywords?: string[];
+}
+
+function normalizeSearchText(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[.,\-_/()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 const HUANUCO_ZONES: HuanucoZone[] = [
-  // Huánuco Cercado / Centro
-  { id: 'hco-centro', name: 'Huánuco - Centro / Jr. Crespo Castillo / Plaza de Armas', district: 'Huánuco Centro', reference: 'Cerca a Jr. Crespo Castillo 614' },
-  { id: 'hco-dos-de-mayo', name: 'Huánuco - Jr. Dos de Mayo / Jr. General Prado', district: 'Huánuco Centro' },
-  { id: 'hco-alameda', name: 'Huánuco - Alameda de la República / Tarapacá', district: 'Huánuco Centro' },
-  { id: 'hco-mercados', name: 'Huánuco - Mercado Modelo / Mercado Central', district: 'Huánuco Centro' },
-  { id: 'hco-san-cristobal', name: 'Huánuco - San Cristóbal / Calicanto', district: 'Huánuco' },
-  { id: 'hco-vina-del-rio', name: 'Huánuco - Laguna Viña del Río / El Tingo', district: 'Huánuco' },
-  { id: 'hco-moras', name: 'Huánuco - Las Moras / San Luis Gonzaga', district: 'Huánuco' },
-  { id: 'hco-aparicio', name: 'Huánuco - Aparicio Pomares / Puelles', district: 'Huánuco' },
+  // ==========================================
+  // JIRONES Y CALLES - HUÁNUCO CENTRO
+  // ==========================================
+  { id: 'hco-crespo-castillo', name: 'Jr. Crespo Castillo (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Donde se ubica Hoshi Market N° 614', keywords: ['crespo', 'castillo', 'hoshi'] },
+  { id: 'hco-ayacucho', name: 'Jr. Ayacucho (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Desde San Cristóbal hasta la Alameda', keywords: ['ayacucho', 'jr ayacucho'] },
+  { id: 'hco-pedro-puelles', name: 'Jr. Pedro Puelles (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Zona Parque Pedro Puelles', keywords: ['pedro', 'puelles', 'jr pedro puelles'] },
+  { id: 'hco-tarapaca', name: 'Jr. Tarapacá (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Eje céntrico de Huánuco', keywords: ['tarapaca', 'jr tarapaca'] },
+  { id: 'hco-alameda', name: 'Alameda de la República (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Avenida Alameda de la República', keywords: ['alameda', 'republica', 'alameda de la republica'] },
+  { id: 'hco-dos-de-mayo', name: 'Jr. Dos de Mayo (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Plaza de Armas / Iglesia San Francisco', keywords: ['dos de mayo', '2 de mayo', 'jr dos de mayo'] },
+  { id: 'hco-general-prado', name: 'Jr. General Prado (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Frente a Plaza de Armas y Catedral', keywords: ['general', 'prado', 'jr general prado'] },
+  { id: 'hco-28-de-julio', name: 'Jr. 28 de Julio (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Eje comercial céntrico', keywords: ['28 de julio', 'veintiocho de julio', 'jr 28 de julio'] },
+  { id: 'hco-damaso-beraun', name: 'Jr. Dámaso Beraún (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Centro de Huánuco', keywords: ['damaso', 'beraun', 'jr damaso beraun'] },
+  { id: 'hco-hermilio-valdizan', name: 'Jr. Hermilio Valdizán (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Centro de Huánuco', keywords: ['hermilio', 'valdizan', 'jr hermilio valdizan'] },
+  { id: 'hco-huallayco', name: 'Jr. Huallayco (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Zona Mercado Modelo', keywords: ['huallayco', 'mercado modelo', 'jr huallayco'] },
+  { id: 'hco-abtao', name: 'Jr. Abtao (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Centro de Huánuco', keywords: ['abtao', 'jr abtao'] },
+  { id: 'hco-aguilar', name: 'Jr. Aguilar (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Centro de Huánuco', keywords: ['aguilar', 'jr aguilar'] },
+  { id: 'hco-san-martin', name: 'Jr. San Martín (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Centro de Huánuco', keywords: ['san martin', 'jr san martin'] },
+  { id: 'hco-independencia', name: 'Jr. Independencia (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Centro de Huánuco', keywords: ['independencia', 'jr independencia'] },
+  { id: 'hco-constitucion', name: 'Jr. Constitución (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Centro de Huánuco', keywords: ['constitucion', 'jr constitucion'] },
+  { id: 'hco-junin', name: 'Jr. Junín (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Centro de Huánuco', keywords: ['junin', 'jr junin'] },
+  { id: 'hco-mayro', name: 'Jr. Mayro (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Centro de Huánuco', keywords: ['mayro', 'jr mayro'] },
+  { id: 'hco-huanuco', name: 'Jr. Huánuco (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Centro de Huánuco', keywords: ['huanuco', 'calle huanuco', 'jr huanuco'] },
+  { id: 'hco-progreso', name: 'Jr. Progreso (Huánuco)', district: 'Huánuco', reference: 'Zona Huánuco Cercado', keywords: ['progreso', 'jr progreso'] },
+  { id: 'hco-morona', name: 'Jr. Morona (Huánuco)', district: 'Huánuco', reference: 'Zona Huánuco Cercado', keywords: ['morona', 'jr morona'] },
+  { id: 'hco-malecon-alomia', name: 'Malecón Daniel Alomía Robles (Huánuco)', district: 'Huánuco', reference: 'Ribera del río Huallaga', keywords: ['malecon', 'daniel', 'alomia', 'robles'] },
+  { id: 'hco-malecon-centenario', name: 'Malecón Centenario (Huánuco)', district: 'Huánuco', reference: 'Malecón Centenario Guillermo Rolando', keywords: ['malecon centenario', 'guillermo rolando'] },
 
-  // Amarilis
-  { id: 'ama-paucarbamba', name: 'Amarilis - Paucarbamba (Plaza Mayor / Jr. Huallaga)', district: 'Amarilis' },
-  { id: 'ama-paucarbambilla', name: 'Amarilis - Paucarbambilla / Vía Colectora', district: 'Amarilis' },
-  { id: 'ama-fonavi-1-2', name: 'Amarilis - Fonavi 1 y 2', district: 'Amarilis' },
-  { id: 'ama-fonavi-3-5', name: 'Amarilis - Fonavi 3, 4 y 5', district: 'Amarilis' },
-  { id: 'ama-san-luis', name: 'Amarilis - San Luis / Llicua / La Esperanza', district: 'Amarilis' },
-  { id: 'ama-huayopampa', name: 'Amarilis - Huayopampa / Portada del Sol', district: 'Amarilis' },
+  // ==========================================
+  // PASAJES DE HUÁNUCO
+  // ==========================================
+  { id: 'hco-psje-cardenas', name: 'Psje. Cárdenas (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Pasaje Cárdenas', keywords: ['pasaje cardenas', 'psje cardenas', 'cardenas'] },
+  { id: 'hco-psje-san-cristobal', name: 'Psje. San Cristóbal (Huánuco)', district: 'Huánuco', reference: 'Pasaje San Cristóbal', keywords: ['pasaje san cristobal', 'psje san cristobal'] },
+  { id: 'hco-psje-villegas', name: 'Psje. Villegas (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Pasaje Villegas', keywords: ['pasaje villegas', 'psje villegas', 'villegas'] },
+  { id: 'hco-psje-gomero', name: 'Psje. Gomero (Huánuco)', district: 'Huánuco', reference: 'Pasaje Gomero', keywords: ['pasaje gomero', 'psje gomero', 'gomero'] },
+  { id: 'hco-psje-laureles', name: 'Psje. Los Laureles (Huánuco)', district: 'Huánuco', reference: 'Pasaje Los Laureles', keywords: ['pasaje los laureles', 'psje laureles', 'laureles'] },
 
-  // Pillco Marca
-  { id: 'pil-cayhuayna-baja', name: 'Pillco Marca - Cayhuayna Baja / Campus UNHEVAL', district: 'Pillco Marca' },
-  { id: 'pil-cayhuayna-alta', name: 'Pillco Marca - Cayhuayna Alta / Av. Universitaria', district: 'Pillco Marca' },
-  { id: 'pil-potracancha', name: 'Pillco Marca - Potracancha / Juan Velasco', district: 'Pillco Marca' },
-  { id: 'pil-yanag', name: 'Pillco Marca - Yanag / Marabamba', district: 'Pillco Marca' },
+  // ==========================================
+  // BARRIOS Y ZONAS CLAVE - HUÁNUCO
+  // ==========================================
+  { id: 'hco-plaza-armas', name: 'Plaza de Armas (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Centro Cívico y Catedral', keywords: ['plaza de armas', 'catedral', 'parque central'] },
+  { id: 'hco-mercado-modelo', name: 'Mercado Modelo (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Jr. Huallayco con Aguilar', keywords: ['mercado modelo', 'la parada'] },
+  { id: 'hco-mercado-central', name: 'Mercado Central (Huánuco Centro)', district: 'Huánuco Centro', reference: 'Mercado Central', keywords: ['mercado central', 'antiguo mercado'] },
+  { id: 'hco-san-cristobal', name: 'Barrio San Cristóbal (Huánuco)', district: 'Huánuco', reference: 'Zona Iglesia San Cristóbal', keywords: ['san cristobal', 'iglesia san cristobal'] },
+  { id: 'hco-puente-calicanto', name: 'Puente Calicanto (Huánuco)', district: 'Huánuco', reference: 'Puente histórico sobre el río Huallaga', keywords: ['puente calicanto', 'calicanto'] },
+  { id: 'hco-vina-del-rio', name: 'Laguna Viña del Río (Huánuco)', district: 'Huánuco', reference: 'Parque Viña del Río', keywords: ['laguna vina del rio', 'vina del rio'] },
+  { id: 'hco-el-tingo', name: 'Parque El Tingo (Huánuco)', district: 'Huánuco', reference: 'Zona recreacional El Tingo', keywords: ['el tingo', 'parque el tingo', 'tingo'] },
+  { id: 'hco-moras', name: 'Las Moras (Huánuco)', district: 'Huánuco', reference: 'Urb. Las Moras / San Luis Gonzaga', keywords: ['las moras', 'moras'] },
+  { id: 'hco-aparicio-pomares', name: 'Aparicio Pomares (Huánuco)', district: 'Huánuco', reference: 'Zona alta Aparicio Pomares', keywords: ['aparicio pomares', 'pomares'] },
+  { id: 'hco-san-pedro', name: 'San Pedro (Huánuco)', district: 'Huánuco', reference: 'Barrio San Pedro', keywords: ['san pedro'] },
+  { id: 'hco-estadio-puelles', name: 'Parque Pedro Puelles / Estadio Heraclio Tapia', district: 'Huánuco', reference: 'Estadio Heraclio Tapia León', keywords: ['estadio heraclio tapia', 'heraclio tapia', 'parque puelles'] },
+  { id: 'hco-colpa-baja', name: 'Colpa Baja (Huánuco)', district: 'Huánuco', reference: 'Cerca al Aeropuerto Alférez FAP David Figueroa', keywords: ['colpa baja', 'aeropuerto'] },
 
-  // Alrededores
-  { id: 'valle-santa-maria', name: 'Santa María del Valle / Alrededores de Huánuco', district: 'Alrededores' },
-  { id: 'otra-zona', name: 'Otra zona de Huánuco (especificar en dirección)', district: 'Personalizado' },
+  // ==========================================
+  // DISTRITO DE AMARILIS
+  // ==========================================
+  { id: 'ama-paucarbamba', name: 'Paucarbamba (Amarilis)', district: 'Amarilis', reference: 'Plaza Mayor de Amarilis', keywords: ['paucarbamba', 'plaza amarilis', 'plaza paucarbamba'] },
+  { id: 'ama-av-tupac-amaru', name: 'Av. Túpac Amaru (Amarilis)', district: 'Amarilis', reference: 'Eje principal de Paucarbamba', keywords: ['av tupac amaru', 'tupac amaru'] },
+  { id: 'ama-via-colectora', name: 'Vía Colectora (Amarilis)', district: 'Amarilis', reference: 'Av. Colectora / Residencial', keywords: ['via colectora', 'colectora'] },
+  { id: 'ama-paucarbambilla', name: 'Paucarbambilla (Amarilis)', district: 'Amarilis', reference: 'Zona Paucarbambilla', keywords: ['paucarbambilla'] },
+  { id: 'ama-fonavi-1-2', name: 'Fonavi 1 y 2 (Amarilis)', district: 'Amarilis', reference: 'Urb. Fonavi 1 y 2', keywords: ['fonavi 1', 'fonavi 2', 'fonavi uno', 'fonavi dos'] },
+  { id: 'ama-fonavi-3-5', name: 'Fonavi 3, 4 y 5 (Amarilis)', district: 'Amarilis', reference: 'Urb. Fonavi 3, 4 y 5', keywords: ['fonavi 3', 'fonavi 4', 'fonavi 5'] },
+  { id: 'ama-san-luis', name: 'San Luis (Amarilis)', district: 'Amarilis', reference: 'Sectores 1, 2, 3, 4 y 5', keywords: ['san luis amarilis', 'san luis'] },
+  { id: 'ama-llicua-alta', name: 'Llicua Alta (Amarilis)', district: 'Amarilis', reference: 'Llicua Alta', keywords: ['llicua alta', 'llicua'] },
+  { id: 'ama-llicua-baja', name: 'Llicua Baja (Amarilis)', district: 'Amarilis', reference: 'Llicua Baja', keywords: ['llicua baja', 'llicua'] },
+  { id: 'ama-la-esperanza', name: 'La Esperanza (Amarilis)', district: 'Amarilis', reference: 'Zona norte de Amarilis', keywords: ['la esperanza', 'esperanza'] },
+  { id: 'ama-huayopampa', name: 'Huayopampa (Amarilis)', district: 'Amarilis', reference: 'Zona Huayopampa', keywords: ['huayopampa'] },
+  { id: 'ama-portada-sol', name: 'Portada del Sol (Amarilis)', district: 'Amarilis', reference: 'Urb. Portada del Sol', keywords: ['portada del sol'] },
+  { id: 'ama-jr-huallaga', name: 'Jr. Huallaga (Amarilis)', district: 'Amarilis', reference: 'Paucarbamba', keywords: ['jr huallaga amarilis', 'huallaga'] },
+  { id: 'ama-jr-cahuide', name: 'Jr. Cahuide (Amarilis)', district: 'Amarilis', reference: 'Paucarbamba', keywords: ['jr cahuide', 'cahuide'] },
+  { id: 'ama-jr-los-pinos', name: 'Jr. Los Pinos (Amarilis)', district: 'Amarilis', reference: 'Paucarbamba', keywords: ['jr los pinos', 'los pinos'] },
+  { id: 'ama-hospital-essalud', name: 'Hospital EsSalud II Huánuco (Amarilis)', district: 'Amarilis', reference: 'Cerca a Vía Colectora', keywords: ['hospital essalud', 'seguro essalud'] },
+  { id: 'ama-malecon-huallaga', name: 'Malecón Huallaga (Amarilis)', district: 'Amarilis', reference: 'Ribera en Paucarbamba', keywords: ['malecon amarilis', 'malecon huallaga'] },
+
+  // ==========================================
+  // DISTRITO DE PILLCO MARCA
+  // ==========================================
+  { id: 'pil-cayhuayna-baja', name: 'Cayhuayna Baja (Pillco Marca)', district: 'Pillco Marca', reference: 'Zona baja de Cayhuayna', keywords: ['cayhuayna baja', 'cayhuayna'] },
+  { id: 'pil-cayhuayna-alta', name: 'Cayhuayna Alta (Pillco Marca)', district: 'Pillco Marca', reference: 'Zona alta de Cayhuayna', keywords: ['cayhuayna alta'] },
+  { id: 'pil-unheval', name: 'Campus Universitario UNHEVAL (Pillco Marca)', district: 'Pillco Marca', reference: 'Universidad Nacional Hermilio Valdizán', keywords: ['unheval', 'universidad valdizan', 'campus universitario'] },
+  { id: 'pil-av-universitaria', name: 'Av. Universitaria (Pillco Marca)', district: 'Pillco Marca', reference: 'Avenida frente a la UNHEVAL', keywords: ['av universitaria', 'universitaria'] },
+  { id: 'pil-av-velasco', name: 'Av. Juan Velasco Alvarado (Pillco Marca)', district: 'Pillco Marca', reference: 'Av. Juan Velasco', keywords: ['juan velasco alvarado', 'av velasco'] },
+  { id: 'pil-potracancha', name: 'Potracancha (Pillco Marca)', district: 'Pillco Marca', reference: 'Zona Potracancha', keywords: ['potracancha'] },
+  { id: 'pil-yanag', name: 'Yanag (Pillco Marca)', district: 'Pillco Marca', reference: 'Zona Yanag', keywords: ['yanag'] },
+  { id: 'pil-marabamba', name: 'Marabamba (Pillco Marca)', district: 'Pillco Marca', reference: 'Zona Marabamba', keywords: ['marabamba'] },
+  { id: 'pil-pitumama', name: 'Pitumama (Pillco Marca)', district: 'Pillco Marca', reference: 'Zona Pitumama', keywords: ['pitumama'] },
+  { id: 'pil-otorongo', name: 'Otorongo (Pillco Marca)', district: 'Pillco Marca', reference: 'Zona Otorongo', keywords: ['otorongo'] },
+
+  // ==========================================
+  // ALREDEDORES Y PERSONALIZADO
+  // ==========================================
+  { id: 'valle-santa-maria', name: 'Santa María del Valle', district: 'Alrededores', reference: 'Valle de Huánuco', keywords: ['santa maria del valle', 'el valle'] },
+  { id: 'valle-kotosh', name: 'Kotosh (Templo de las Manos Cruzadas)', district: 'Alrededores', reference: 'Zona arqueológica Kotosh', keywords: ['kotosh', 'manos cruzadas'] },
+  { id: 'valle-la-florida', name: 'La Florida / Rancho', district: 'Alrededores', reference: 'Alrededores de Huánuco', keywords: ['la florida', 'rancho'] },
+  { id: 'otra-zona', name: 'Otra dirección en Huánuco (especificar abajo)', district: 'Personalizado', reference: 'Escribe tu calle o pasaje exacto en la dirección', keywords: ['otra', 'otro', 'personalizado'] },
 ];
 
 export default function CartDrawer() {
@@ -78,7 +156,7 @@ export default function CartDrawer() {
   const [customerName, setCustomerName] = useState('');
   const [deliveryType, setDeliveryType] = useState<'pickup' | 'delivery'>('pickup');
   const [deliveryService, setDeliveryService] = useState<'llamafood' | 'direct'>('llamafood');
-  const [selectedZone, setSelectedZone] = useState<string>('Huánuco - Centro / Jr. Crespo Castillo / Plaza de Armas');
+  const [selectedZone, setSelectedZone] = useState<string>('Jr. Crespo Castillo (Huánuco Centro)');
   const [zoneSearch, setZoneSearch] = useState<string>('');
   const [isZoneDropdownOpen, setIsZoneDropdownOpen] = useState<boolean>(false);
   const [address, setAddress] = useState('');
@@ -86,15 +164,18 @@ export default function CartDrawer() {
   const [notes, setNotes] = useState('');
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
 
-  // Filter Huánuco zones in search
+  // Filter Huánuco zones and streets in search with tokenized normalization
   const filteredZones = useMemo(() => {
     if (!zoneSearch.trim()) return HUANUCO_ZONES;
-    const q = zoneSearch.toLowerCase().trim();
-    return HUANUCO_ZONES.filter(z => 
-      z.name.toLowerCase().includes(q) || 
-      z.district.toLowerCase().includes(q) ||
-      (z.reference && z.reference.toLowerCase().includes(q))
-    );
+    const cleanQuery = normalizeSearchText(zoneSearch);
+    const queryTokens = cleanQuery.split(' ').filter(Boolean);
+
+    return HUANUCO_ZONES.filter(z => {
+      const fullText = normalizeSearchText(
+        `${z.name} ${z.district} ${z.reference || ''} ${(z.keywords || []).join(' ')}`
+      );
+      return queryTokens.every(token => fullText.includes(token));
+    });
   }, [zoneSearch]);
 
   if (!isCartOpen) return null;
@@ -452,7 +533,7 @@ export default function CartDrawer() {
                               <Search className="w-3.5 h-3.5 text-[#867894] absolute left-2.5 top-1/2 -translate-y-1/2" />
                               <input
                                 type="text"
-                                placeholder="Buscar zona (ej. Paucarbamba, Cayhuayna, Fonavi)..."
+                                placeholder="Buscar calle, jirón o zona (ej. Jr. Ayacucho, Pedro Puelles, Psje. Cárdenas)..."
                                 value={zoneSearch}
                                 onChange={(e) => setZoneSearch(e.target.value)}
                                 className="w-full bg-white pl-8 pr-3 py-1.5 text-xs rounded-lg border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] focus:outline-none"
@@ -462,7 +543,7 @@ export default function CartDrawer() {
                           </div>
 
                           {/* Filtered Zones List */}
-                          <div className="max-h-48 overflow-y-auto divide-y divide-[#FAF8F5]">
+                          <div className="max-h-56 overflow-y-auto divide-y divide-[#FAF8F5]">
                             {filteredZones.length > 0 ? (
                               filteredZones.map((z) => {
                                 const isSelected = selectedZone === z.name;
@@ -482,7 +563,7 @@ export default function CartDrawer() {
                                     }`}
                                   >
                                     <div className="truncate">
-                                      <span className="block truncate text-[11px]">{z.name}</span>
+                                      <span className="block truncate text-[11px] font-semibold">{z.name}</span>
                                       <span className="text-[10px] text-[#867894] block font-normal">
                                         {z.district} {z.reference ? `• ${z.reference}` : ''}
                                       </span>
@@ -493,17 +574,17 @@ export default function CartDrawer() {
                               })
                             ) : (
                               <div className="p-3 text-center text-xs text-[#867894]">
-                                <span>No encontramos esa zona exacta.</span>
+                                <span>No encontramos esa calle exacta en la lista rápida.</span>
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    setSelectedZone('Otra zona de Huánuco (especificar en dirección)');
+                                    setSelectedZone('Otra dirección en Huánuco (especificar abajo)');
                                     setIsZoneDropdownOpen(false);
                                     setZoneSearch('');
                                   }}
                                   className="block mx-auto mt-1 text-[#9368B7] font-bold underline"
                                 >
-                                  Usar &quot;Otra zona en Huánuco&quot;
+                                  Usar &quot;Otra dirección personalizada&quot;
                                 </button>
                               </div>
                             )}
