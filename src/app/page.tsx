@@ -57,6 +57,13 @@ export default function Home() {
 
       // 3. Seasonal Campaign & Promo Filter
       if (selectedSeason !== 'todos') {
+        if (selectedSeason === 'novedades') {
+          return Boolean(product.tags?.includes('novedad'));
+        }
+        if (selectedSeason === 'favoritos') {
+          return Boolean(product.is_featured);
+        }
+
         const promo = promotions.find(p => (p.id === product.promotion_id || p.product_ids?.includes(product.id)) && p.is_active);
         const isComboProduct = product.id.startsWith('combo-');
 
@@ -132,7 +139,11 @@ export default function Home() {
               <span>{currentCategoryObj ? `${currentCategoryObj.icon} ${currentCategoryObj.name}` : 'Todo el Catálogo'}</span>
               {selectedSeason !== 'todos' && (
                 <span className="text-xs font-bold bg-[#9368B7] text-white px-2.5 py-0.5 rounded-full">
-                  {selectedSeason === 'vencimiento'
+                  {selectedSeason === 'novedades'
+                    ? '🆕 Lo Más Nuevo'
+                    : selectedSeason === 'favoritos'
+                    ? '⭐ Favoritos de la Tienda'
+                    : selectedSeason === 'vencimiento'
                     ? 'Liquidación / Fecha Próxima'
                     : selectedSeason === 'combos'
                     ? 'Packs & Combos'

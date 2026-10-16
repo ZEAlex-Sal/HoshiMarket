@@ -3,7 +3,7 @@
 import React from 'react';
 import { useStore } from '@/context/store-context';
 import { SeasonCampaign } from '@/types';
-import { Flame, Sparkles, Layers, Clock, Gift } from 'lucide-react';
+import { Flame, Sparkles, Layers, Clock, Gift, Star } from 'lucide-react';
 
 export default function CategoryFilter() {
   const { 
@@ -19,6 +19,8 @@ export default function CategoryFilter() {
 
   const seasonalFilters: Array<{ id: SeasonCampaign; label: string; icon: React.ReactNode; color: string }> = [
     { id: 'todos', label: 'Todo el Catálogo', icon: <Layers className="w-3.5 h-3.5 text-[#9368B7]" />, color: 'hover:border-[#9368B7]' },
+    { id: 'novedades', label: 'Lo Más Nuevo', icon: <Sparkles className="w-3.5 h-3.5 text-sky-500" />, color: 'hover:border-sky-400' },
+    { id: 'favoritos', label: 'Favoritos de la Tienda', icon: <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />, color: 'hover:border-amber-400' },
     { id: 'general', label: 'Promociones', icon: <Flame className="w-3.5 h-3.5 text-rose-500" />, color: 'hover:border-rose-400' },
     { id: 'vencimiento', label: 'Liquidación / Fecha Próxima', icon: <Clock className="w-3.5 h-3.5 text-amber-500" />, color: 'hover:border-amber-400' },
     { id: 'combos', label: 'Packs & Combos', icon: <Gift className="w-3.5 h-3.5 text-purple-600" />, color: 'hover:border-purple-400' },

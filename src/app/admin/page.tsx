@@ -150,6 +150,7 @@ export default function AdminPage() {
     in_stock: true,
     stock_quantity: 20,
     is_featured: false,
+    tags: [] as string[],
     promotion_id: ''
   });
 
@@ -316,6 +317,7 @@ export default function AdminPage() {
       in_stock: true,
       stock_quantity: 25,
       is_featured: false,
+      tags: [],
       promotion_id: ''
     });
     setIsProductModalOpen(true);
@@ -336,6 +338,7 @@ export default function AdminPage() {
       in_stock: prod.in_stock,
       stock_quantity: prod.stock_quantity || 0,
       is_featured: prod.is_featured || false,
+      tags: prod.tags || [],
       promotion_id: prod.promotion_id || ''
     });
     setIsProductModalOpen(true);
@@ -353,6 +356,7 @@ export default function AdminPage() {
         price: Number(prodForm.price),
         original_price: Number(prodForm.original_price) || undefined,
         stock_quantity: Number(prodForm.stock_quantity),
+        tags: prodForm.tags,
         promotion_id: prodForm.promotion_id || undefined
       });
     } else {
@@ -362,6 +366,7 @@ export default function AdminPage() {
         price: Number(prodForm.price),
         original_price: Number(prodForm.original_price) || undefined,
         stock_quantity: Number(prodForm.stock_quantity),
+        tags: prodForm.tags,
         promotion_id: prodForm.promotion_id || undefined
       });
     }
@@ -852,11 +857,21 @@ export default function AdminPage() {
                               }`}
                             />
                             <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 <p className={`font-bold truncate max-w-xs ${isOut ? 'text-gray-500' : 'text-[#261C30]'}`}>{p.name}</p>
                                 {p.id.startsWith('combo-') && (
                                   <span className="text-[9px] font-black bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full uppercase">
                                     Pack Combo
+                                  </span>
+                                )}
+                                {p.tags?.includes('novedad') && (
+                                  <span className="text-[9px] font-black bg-sky-100 text-sky-800 border border-sky-200 px-1.5 py-0.5 rounded-full">
+                                    🆕 Novedad
+                                  </span>
+                                )}
+                                {p.is_featured && !p.tags?.includes('novedad') && !p.id.startsWith('combo-') && (
+                                  <span className="text-[9px] font-black bg-[#EFE6F7] text-[#9368B7] border border-[#D8C3E5] px-1.5 py-0.5 rounded-full">
+                                    ✨ Favorito
                                   </span>
                                 )}
                               </div>
@@ -1614,6 +1629,81 @@ export default function AdminPage() {
                         >
                           <span className="w-2.5 h-2.5 rounded-full bg-rose-500 flex-shrink-0" />
                           <span>Agotado</span>
+                        </button>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Selector de Destacado / Cinta Superior en la Tarjeta */}
+              <div>
+                <label className="font-bold text-[#261C30] block mb-1.5">
+                  Destacado / Cinta Superior del Producto
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(() => {
+                    const isNew = prodForm.tags.includes('novedad');
+                    const isFav = prodForm.is_featured && !isNew;
+                    const isNormal = !isNew && !isFav;
+
+                    return (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setProdForm({
+                              ...prodForm,
+                              is_featured: false,
+                              tags: prodForm.tags.filter(t => t !== 'novedad')
+                            })
+                          }
+                          className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                            isNormal
+                              ? 'bg-white border-[#9368B7] text-[#261C30] ring-2 ring-[#9368B7]/20 shadow-xs'
+                              : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
+                          }`}
+                        >
+                          <span>🏷️</span>
+                          <span>Normal</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setProdForm({
+                              ...prodForm,
+                              is_featured: true,
+                              tags: prodForm.tags.filter(t => t !== 'novedad')
+                            })
+                          }
+                          className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                            isFav
+                              ? 'bg-[#EFE6F7] border-[#9368B7] text-[#9368B7] ring-2 ring-[#9368B7]/30 shadow-xs'
+                              : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
+                          }`}
+                        >
+                          <span>✨</span>
+                          <span>Favorito</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setProdForm({
+                              ...prodForm,
+                              is_featured: false,
+                              tags: Array.from(new Set([...prodForm.tags, 'novedad']))
+                            })
+                          }
+                          className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                            isNew
+                              ? 'bg-sky-50 border-sky-400 text-sky-800 ring-2 ring-sky-200 shadow-xs'
+                              : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
+                          }`}
+                        >
+                          <span>🆕</span>
+                          <span>¡Novedad!</span>
                         </button>
                       </>
                     );

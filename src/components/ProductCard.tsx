@@ -88,6 +88,7 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
     : 'available';
 
   const isOut = stockLevel === 'out';
+  const isNewArrival = Boolean(product.tags?.includes('novedad'));
 
   return (
     <div 
@@ -134,6 +135,16 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
                 : promotion.type === 'discount_percent'
                 ? `-${promotion.discount_value}%`
                 : 'PACK'}
+            </span>
+          </div>
+        ) : isNewArrival ? (
+          <div className="w-full h-full bg-gradient-to-r from-sky-500 via-teal-500 to-sky-500 text-white px-3 flex items-center justify-between text-[10px] font-black shadow-xs">
+            <span className="flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-200" />
+              ¡Novedad!
+            </span>
+            <span className="text-[9px] bg-white/20 px-1.5 py-0.2 rounded-full font-bold">
+              Recién Llegado
             </span>
           </div>
         ) : product.is_featured ? (
