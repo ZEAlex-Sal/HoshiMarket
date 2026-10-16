@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useStore } from '@/context/store-context';
 import { formatWhatsAppMessage } from '@/lib/promotions-engine';
 import { 
@@ -14,9 +14,53 @@ import {
   MapPin, 
   Store, 
   Bike, 
-  CreditCard 
+  CreditCard,
+  Banknote,
+  Building2,
+  Search,
+  ChevronDown,
+  Check,
+  Zap,
+  Navigation
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+
+interface HuanucoZone {
+  id: string;
+  name: string;
+  district: string;
+  reference?: string;
+}
+
+const HUANUCO_ZONES: HuanucoZone[] = [
+  // Huánuco Cercado / Centro
+  { id: 'hco-centro', name: 'Huánuco - Centro / Jr. Crespo Castillo / Plaza de Armas', district: 'Huánuco Centro', reference: 'Cerca a Jr. Crespo Castillo 614' },
+  { id: 'hco-dos-de-mayo', name: 'Huánuco - Jr. Dos de Mayo / Jr. General Prado', district: 'Huánuco Centro' },
+  { id: 'hco-alameda', name: 'Huánuco - Alameda de la República / Tarapacá', district: 'Huánuco Centro' },
+  { id: 'hco-mercados', name: 'Huánuco - Mercado Modelo / Mercado Central', district: 'Huánuco Centro' },
+  { id: 'hco-san-cristobal', name: 'Huánuco - San Cristóbal / Calicanto', district: 'Huánuco' },
+  { id: 'hco-vina-del-rio', name: 'Huánuco - Laguna Viña del Río / El Tingo', district: 'Huánuco' },
+  { id: 'hco-moras', name: 'Huánuco - Las Moras / San Luis Gonzaga', district: 'Huánuco' },
+  { id: 'hco-aparicio', name: 'Huánuco - Aparicio Pomares / Puelles', district: 'Huánuco' },
+
+  // Amarilis
+  { id: 'ama-paucarbamba', name: 'Amarilis - Paucarbamba (Plaza Mayor / Jr. Huallaga)', district: 'Amarilis' },
+  { id: 'ama-paucarbambilla', name: 'Amarilis - Paucarbambilla / Vía Colectora', district: 'Amarilis' },
+  { id: 'ama-fonavi-1-2', name: 'Amarilis - Fonavi 1 y 2', district: 'Amarilis' },
+  { id: 'ama-fonavi-3-5', name: 'Amarilis - Fonavi 3, 4 y 5', district: 'Amarilis' },
+  { id: 'ama-san-luis', name: 'Amarilis - San Luis / Llicua / La Esperanza', district: 'Amarilis' },
+  { id: 'ama-huayopampa', name: 'Amarilis - Huayopampa / Portada del Sol', district: 'Amarilis' },
+
+  // Pillco Marca
+  { id: 'pil-cayhuayna-baja', name: 'Pillco Marca - Cayhuayna Baja / Campus UNHEVAL', district: 'Pillco Marca' },
+  { id: 'pil-cayhuayna-alta', name: 'Pillco Marca - Cayhuayna Alta / Av. Universitaria', district: 'Pillco Marca' },
+  { id: 'pil-potracancha', name: 'Pillco Marca - Potracancha / Juan Velasco', district: 'Pillco Marca' },
+  { id: 'pil-yanag', name: 'Pillco Marca - Yanag / Marabamba', district: 'Pillco Marca' },
+
+  // Alrededores
+  { id: 'valle-santa-maria', name: 'Santa María del Valle / Alrededores de Huánuco', district: 'Alrededores' },
+  { id: 'otra-zona', name: 'Otra zona de Huánuco (especificar en dirección)', district: 'Personalizado' },
+];
 
 export default function CartDrawer() {
   const { 
@@ -33,10 +77,25 @@ export default function CartDrawer() {
 
   const [customerName, setCustomerName] = useState('');
   const [deliveryType, setDeliveryType] = useState<'pickup' | 'delivery'>('pickup');
+  const [deliveryService, setDeliveryService] = useState<'llamafood' | 'direct'>('llamafood');
+  const [selectedZone, setSelectedZone] = useState<string>('Huánuco - Centro / Jr. Crespo Castillo / Plaza de Armas');
+  const [zoneSearch, setZoneSearch] = useState<string>('');
+  const [isZoneDropdownOpen, setIsZoneDropdownOpen] = useState<boolean>(false);
   const [address, setAddress] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('Yape');
+  const [paymentMethod, setPaymentMethod] = useState<'Yape' | 'Plin' | 'Efectivo' | 'Transferencia'>('Yape');
   const [notes, setNotes] = useState('');
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
+
+  // Filter Huánuco zones in search
+  const filteredZones = useMemo(() => {
+    if (!zoneSearch.trim()) return HUANUCO_ZONES;
+    const q = zoneSearch.toLowerCase().trim();
+    return HUANUCO_ZONES.filter(z => 
+      z.name.toLowerCase().includes(q) || 
+      z.district.toLowerCase().includes(q) ||
+      (z.reference && z.reference.toLowerCase().includes(q))
+    );
+  }, [zoneSearch]);
 
   if (!isCartOpen) return null;
 
@@ -68,6 +127,8 @@ export default function CartDrawer() {
       {
         name: customerName,
         deliveryType,
+        deliveryService: deliveryType === 'delivery' ? deliveryService : undefined,
+        deliveryZone: deliveryType === 'delivery' ? selectedZone : undefined,
         address,
         paymentMethod,
         notes
@@ -249,10 +310,10 @@ export default function CartDrawer() {
                   <input
                     type="text"
                     required
-                    placeholder="Ej. Camila Morales"
+                    placeholder="Tu nombre y apellido"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full bg-white px-3 py-2 text-xs rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] focus:outline-none"
+                    className="w-full bg-white px-3 py-2.5 text-xs rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] focus:outline-none shadow-xs"
                   />
                 </div>
 
@@ -265,64 +326,308 @@ export default function CartDrawer() {
                     <button
                       type="button"
                       onClick={() => setDeliveryType('pickup')}
-                      className={`p-2.5 rounded-xl border text-left text-xs font-bold flex flex-col gap-1 transition-all ${
+                      className={`p-3 rounded-2xl border text-left text-xs font-bold flex flex-col gap-1 transition-all ${
                         deliveryType === 'pickup'
-                          ? 'border-[#9368B7] bg-[#EFE6F7] text-[#9368B7]'
-                          : 'border-[#EADBEE] bg-white text-[#6B5E78]'
+                          ? 'border-[#9368B7] bg-[#EFE6F7] text-[#9368B7] shadow-sm ring-1 ring-[#9368B7]'
+                          : 'border-[#EADBEE] bg-white text-[#6B5E78] hover:border-[#9368B7]/40'
                       }`}
                     >
-                      <Store className="w-4 h-4" />
-                      <span>Recojo en Tienda</span>
-                      <span className="text-[10px] font-normal opacity-80">Jr. Crespo Castillo 614</span>
+                      <div className="flex items-center justify-between">
+                        <Store className="w-4 h-4 text-[#9368B7]" />
+                        {deliveryType === 'pickup' && <Check className="w-3.5 h-3.5 text-[#9368B7]" />}
+                      </div>
+                      <span className="font-black text-[#261C30]">Recojo en Tienda</span>
+                      <span className="text-[10px] font-normal text-[#867894]">Jr. Crespo Castillo 614</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setDeliveryType('delivery')}
-                      className={`p-2.5 rounded-xl border text-left text-xs font-bold flex flex-col gap-1 transition-all ${
+                      className={`p-3 rounded-2xl border text-left text-xs font-bold flex flex-col gap-1 transition-all ${
                         deliveryType === 'delivery'
-                          ? 'border-[#9368B7] bg-[#EFE6F7] text-[#9368B7]'
-                          : 'border-[#EADBEE] bg-white text-[#6B5E78]'
+                          ? 'border-[#9368B7] bg-[#EFE6F7] text-[#9368B7] shadow-sm ring-1 ring-[#9368B7]'
+                          : 'border-[#EADBEE] bg-white text-[#6B5E78] hover:border-[#9368B7]/40'
                       }`}
                     >
-                      <Bike className="w-4 h-4" />
-                      <span>Delivery en Huánuco</span>
-                      <span className="text-[10px] font-normal opacity-80">A tu domicilio / oficina</span>
+                      <div className="flex items-center justify-between">
+                        <Bike className="w-4 h-4 text-[#9368B7]" />
+                        {deliveryType === 'delivery' && <Check className="w-3.5 h-3.5 text-[#9368B7]" />}
+                      </div>
+                      <span className="font-black text-[#261C30]">Delivery en Huánuco</span>
+                      <span className="text-[10px] font-normal text-[#867894]">A tu domicilio u oficina</span>
                     </button>
                   </div>
                 </div>
 
                 {deliveryType === 'delivery' && (
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-[#261C30] block">
-                      Dirección de Entrega / Referencia *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ej. Jr. Dos de Mayo 450, frente al parque"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className="w-full bg-white px-3 py-2 text-xs rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] focus:outline-none"
-                    />
+                  <div className="space-y-3 p-3 bg-white rounded-2xl border border-[#EADBEE]">
+                    {/* Delivery Provider (Llamafood vs Direct) */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-[#261C30] flex items-center justify-between">
+                        <span>Servicio de Delivery (Huánuco) *</span>
+                        <span className="text-[10px] text-[#9368B7] font-semibold">Cobertura local</span>
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* Llamafood Button */}
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryService('llamafood')}
+                          className={`p-2.5 rounded-xl border text-left text-xs transition-all relative ${
+                            deliveryService === 'llamafood'
+                              ? 'border-[#E65100] bg-orange-50/70 ring-1 ring-[#E65100] shadow-xs'
+                              : 'border-[#EADBEE] bg-[#FAF8F5] text-[#6B5E78] hover:border-orange-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-base" role="img" aria-label="llama">🦙</span>
+                            {deliveryService === 'llamafood' && (
+                              <span className="bg-[#E65100] text-white text-[9px] font-black px-1.5 py-0.2 rounded-full">
+                                OFICIAL
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-black text-xs block text-[#261C30]">Llamafood</span>
+                          <span className="text-[10px] text-[#867894] block leading-tight">Delivery Express</span>
+                        </button>
+
+                        {/* Direct Local Delivery Button */}
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryService('direct')}
+                          className={`p-2.5 rounded-xl border text-left text-xs transition-all ${
+                            deliveryService === 'direct'
+                              ? 'border-[#9368B7] bg-[#EFE6F7] ring-1 ring-[#9368B7] shadow-xs'
+                              : 'border-[#EADBEE] bg-[#FAF8F5] text-[#6B5E78] hover:border-[#9368B7]/40'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <Bike className="w-4 h-4 text-[#9368B7]" />
+                            {deliveryService === 'direct' && (
+                              <span className="bg-[#9368B7] text-white text-[9px] font-black px-1.5 py-0.2 rounded-full">
+                                LOCAL
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-black text-xs block text-[#261C30]">Delivery Local</span>
+                          <span className="text-[10px] text-[#867894] block leading-tight">Coordinado Tienda</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Searchable Huánuco Zone Dropdown */}
+                    <div className="space-y-1 relative">
+                      <label className="text-[11px] font-bold text-[#261C30] block">
+                        Zona o Distrito en Huánuco *
+                      </label>
+
+                      {/* Backdrop to close dropdown */}
+                      {isZoneDropdownOpen && (
+                        <div 
+                          className="fixed inset-0 z-20" 
+                          onClick={() => setIsZoneDropdownOpen(false)} 
+                        />
+                      )}
+
+                      {/* Dropdown Button */}
+                      <button
+                        type="button"
+                        onClick={() => setIsZoneDropdownOpen(!isZoneDropdownOpen)}
+                        className="w-full bg-[#FAF8F5] px-3 py-2 text-xs rounded-xl border border-[#EADBEE] text-left flex items-center justify-between gap-2 hover:border-[#9368B7] focus:ring-2 focus:ring-[#9368B7] transition-all"
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <MapPin className="w-3.5 h-3.5 text-[#9368B7] flex-shrink-0" />
+                          <span className="font-medium text-[#261C30] truncate text-[11px]">
+                            {selectedZone}
+                          </span>
+                        </div>
+                        <ChevronDown className={`w-3.5 h-3.5 text-[#867894] transition-transform duration-200 flex-shrink-0 ${isZoneDropdownOpen ? 'rotate-180 text-[#9368B7]' : ''}`} />
+                      </button>
+
+                      {/* Searchable Dropdown Popover */}
+                      {isZoneDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1 z-30 bg-white rounded-2xl border border-[#EADBEE] shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                          {/* Search Input */}
+                          <div className="p-2 border-b border-[#F3EDF8] bg-[#FAF8F5]">
+                            <div className="relative">
+                              <Search className="w-3.5 h-3.5 text-[#867894] absolute left-2.5 top-1/2 -translate-y-1/2" />
+                              <input
+                                type="text"
+                                placeholder="Buscar zona (ej. Paucarbamba, Cayhuayna, Fonavi)..."
+                                value={zoneSearch}
+                                onChange={(e) => setZoneSearch(e.target.value)}
+                                className="w-full bg-white pl-8 pr-3 py-1.5 text-xs rounded-lg border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] focus:outline-none"
+                                autoFocus
+                              />
+                            </div>
+                          </div>
+
+                          {/* Filtered Zones List */}
+                          <div className="max-h-48 overflow-y-auto divide-y divide-[#FAF8F5]">
+                            {filteredZones.length > 0 ? (
+                              filteredZones.map((z) => {
+                                const isSelected = selectedZone === z.name;
+                                return (
+                                  <button
+                                    key={z.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedZone(z.name);
+                                      setIsZoneDropdownOpen(false);
+                                      setZoneSearch('');
+                                    }}
+                                    className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between gap-2 transition-colors ${
+                                      isSelected 
+                                        ? 'bg-[#EFE6F7] text-[#9368B7] font-bold' 
+                                        : 'hover:bg-[#FAF8F5] text-[#261C30]'
+                                    }`}
+                                  >
+                                    <div className="truncate">
+                                      <span className="block truncate text-[11px]">{z.name}</span>
+                                      <span className="text-[10px] text-[#867894] block font-normal">
+                                        {z.district} {z.reference ? `• ${z.reference}` : ''}
+                                      </span>
+                                    </div>
+                                    {isSelected && <Check className="w-3.5 h-3.5 text-[#9368B7] flex-shrink-0" />}
+                                  </button>
+                                );
+                              })
+                            ) : (
+                              <div className="p-3 text-center text-xs text-[#867894]">
+                                <span>No encontramos esa zona exacta.</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedZone('Otra zona de Huánuco (especificar en dirección)');
+                                    setIsZoneDropdownOpen(false);
+                                    setZoneSearch('');
+                                  }}
+                                  className="block mx-auto mt-1 text-[#9368B7] font-bold underline"
+                                >
+                                  Usar &quot;Otra zona en Huánuco&quot;
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Exact Address Input */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-[#261C30] block">
+                        Dirección y Referencia de Entrega *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Dirección y referencia de entrega"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        className="w-full bg-[#FAF8F5] px-3 py-2 text-xs rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Llamafood Notice */}
+                    {deliveryService === 'llamafood' && (
+                      <div className="p-2.5 bg-orange-50/80 border border-orange-200/80 rounded-xl flex items-start gap-2 text-[11px] text-orange-950">
+                        <span className="text-sm flex-shrink-0" role="img" aria-label="llama">🦙</span>
+                        <div className="leading-tight">
+                          <span className="font-bold block text-orange-900">Despacho con Llamafood:</span>
+                          <span className="text-orange-900/80 text-[10px]">
+                            Tu pedido se enviará mediante un motorizado de Llamafood en Huánuco tras confirmar tu compra.
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Payment Method */}
-                <div className="space-y-1">
+                {/* Branded Payment Method Selection Buttons */}
+                <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#261C30] block">
-                    Método de Pago Preferido
+                    Método de Pago Preferido *
                   </label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full bg-white px-3 py-2 text-xs rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] focus:outline-none"
-                  >
-                    <option value="Yape">Yape</option>
-                    <option value="Plin">Plin</option>
-                    <option value="Efectivo en Tienda o Contraentrega">Efectivo</option>
-                    <option value="Transferencia BCP / Interbank">Transferencia Bancaria</option>
-                  </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Yape Button (Purple) */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('Yape')}
+                      className={`p-2.5 rounded-2xl border text-left transition-all ${
+                        paymentMethod === 'Yape'
+                          ? 'border-[#742284] bg-[#742284]/10 shadow-sm ring-1 ring-[#742284]'
+                          : 'border-[#EADBEE] bg-white hover:border-[#742284]/40'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="bg-[#742284] text-white text-[10px] font-black px-2 py-0.5 rounded-full tracking-wide">
+                          YAPE
+                        </span>
+                        {paymentMethod === 'Yape' && <Check className="w-3.5 h-3.5 text-[#742284]" />}
+                      </div>
+                      <span className="font-black text-xs text-[#261C30] block">Yape</span>
+                      <span className="text-[10px] text-[#867894] block leading-tight">Transferencia móvil BCP</span>
+                    </button>
+
+                    {/* Plin Button (Teal/Green) */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('Plin')}
+                      className={`p-2.5 rounded-2xl border text-left transition-all ${
+                        paymentMethod === 'Plin'
+                          ? 'border-[#00A896] bg-[#00A896]/10 shadow-sm ring-1 ring-[#00A896]'
+                          : 'border-[#EADBEE] bg-white hover:border-[#00A896]/40'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="bg-[#00A896] text-white text-[10px] font-black px-2 py-0.5 rounded-full tracking-wide">
+                          PLIN
+                        </span>
+                        {paymentMethod === 'Plin' && <Check className="w-3.5 h-3.5 text-[#00A896]" />}
+                      </div>
+                      <span className="font-black text-xs text-[#261C30] block">Plin</span>
+                      <span className="text-[10px] text-[#867894] block leading-tight">Interbank, BBVA, Scotiabank</span>
+                    </button>
+
+                    {/* Efectivo Button (Emerald Green) */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('Efectivo')}
+                      className={`p-2.5 rounded-2xl border text-left transition-all ${
+                        paymentMethod === 'Efectivo'
+                          ? 'border-emerald-600 bg-emerald-50 shadow-sm ring-1 ring-emerald-600'
+                          : 'border-[#EADBEE] bg-white hover:border-emerald-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+                          <Banknote className="w-3.5 h-3.5" />
+                        </div>
+                        {paymentMethod === 'Efectivo' && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                      </div>
+                      <span className="font-black text-xs text-[#261C30] block">Efectivo</span>
+                      <span className="text-[10px] text-[#867894] block leading-tight">En tienda o contraentrega</span>
+                    </button>
+
+                    {/* Transferencia Bancaria Button (Blue) */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('Transferencia')}
+                      className={`p-2.5 rounded-2xl border text-left transition-all ${
+                        paymentMethod === 'Transferencia'
+                          ? 'border-[#0056B3] bg-blue-50 shadow-sm ring-1 ring-[#0056B3]'
+                          : 'border-[#EADBEE] bg-white hover:border-blue-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center text-[#0056B3]">
+                          <Building2 className="w-3.5 h-3.5" />
+                        </div>
+                        {paymentMethod === 'Transferencia' && <Check className="w-3.5 h-3.5 text-[#0056B3]" />}
+                      </div>
+                      <span className="font-black text-xs text-[#261C30] block">Transferencia</span>
+                      <span className="text-[10px] text-[#867894] block leading-tight">BCP, BBVA, Interbank</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Notes */}
@@ -332,10 +637,10 @@ export default function CartDrawer() {
                   </label>
                   <textarea
                     rows={2}
-                    placeholder="Ej. Si tienen Melona de fresa agregar uno, gracias!"
+                    placeholder="Instrucciones adicionales para tu pedido (opcional)"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full bg-white px-3 py-2 text-xs rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] focus:outline-none resize-none"
+                    className="w-full bg-white px-3 py-2 text-xs rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] focus:outline-none resize-none shadow-xs"
                   />
                 </div>
               </form>

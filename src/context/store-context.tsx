@@ -93,7 +93,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (savedPromotions) setPromotions(JSON.parse(savedPromotions));
 
       const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-      if (savedSettings) setSettings(JSON.parse(savedSettings));
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.announcement_banner && parsed.announcement_banner.startsWith('✨')) {
+          parsed.announcement_banner = parsed.announcement_banner.replace(/^✨\s*/, '');
+        }
+        setSettings({ ...INITIAL_SETTINGS, ...parsed });
+      }
 
       const savedCart = localStorage.getItem(STORAGE_KEYS.CART);
       if (savedCart) setCart(JSON.parse(savedCart));

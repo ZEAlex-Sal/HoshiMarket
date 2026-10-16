@@ -102,11 +102,11 @@ export default function Home() {
               </div>
 
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
-                Sabores, Ramens y K-Culture directamente a tu mesa
+                {settings.hero_title || "Sabores, Ramens y K-Culture directamente a tu mesa"}
               </h2>
 
               <p className="text-xs sm:text-sm text-[#EFE6F7] leading-relaxed">
-                Revisa nuestro catálogo de más de 500 productos coreanos originales. Agrega tus favoritos, aprovecha las promociones <span className="font-bold underline decoration-amber-300">2x1 y 3x2</span> y envía tu pedido directamente a nuestro WhatsApp oficial para coordinar recojo o delivery.
+                {settings.hero_subtitle || "Revisa nuestro catálogo de más de 500 productos coreanos originales. Agrega tus favoritos, aprovecha las promociones 2x1 y 3x2 y envía tu pedido directamente a nuestro WhatsApp oficial para coordinar recojo o delivery."}
               </p>
             </div>
           </div>

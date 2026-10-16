@@ -76,6 +76,8 @@ export function formatWhatsAppMessage(
     name: string;
     phone?: string;
     deliveryType: 'delivery' | 'pickup';
+    deliveryService?: string;
+    deliveryZone?: string;
     address?: string;
     paymentMethod: string;
     notes?: string;
@@ -123,13 +125,18 @@ export function formatWhatsAppMessage(
 
   lines.push('📍 *DATOS DE ENTREGA:*');
   lines.push(`• *Cliente:* ${customerData.name.trim() || 'Cliente'}`);
-  lines.push(
-    `• *Modalidad:* ${
-      customerData.deliveryType === 'delivery' 
-        ? `🛵 Delivery a domicilio (${customerData.address || 'Dirección por coordinar'})` 
-        : `🏪 Recojo en tienda (${settings.address})`
-    }`
-  );
+  if (customerData.deliveryType === 'delivery') {
+    const serviceName = customerData.deliveryService === 'llamafood'
+      ? '🦙 Llamafood Express (Huánuco)'
+      : '🛵 Delivery Local Huánuco';
+    lines.push(`• *Modalidad:* Delivery a Domicilio (${serviceName})`);
+    if (customerData.deliveryZone) {
+      lines.push(`• *Zona de Huánuco:* ${customerData.deliveryZone}`);
+    }
+    lines.push(`• *Dirección:* ${customerData.address || 'Por coordinar'}`);
+  } else {
+    lines.push(`• *Modalidad:* 🏪 Recojo en Tienda (${settings.address})`);
+  }
   lines.push(`• *Método de Pago:* ${customerData.paymentMethod}`);
   if (customerData.notes && customerData.notes.trim()) {
     lines.push(`• *Nota adicional:* ${customerData.notes.trim()}`);

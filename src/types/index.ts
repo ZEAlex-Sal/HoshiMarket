@@ -78,4 +78,6 @@ export interface StoreSettings {
   pickup_available: boolean;
   active_campaign: SeasonCampaign;
   announcement_banner: string;
+  hero_title?: string;
+  hero_subtitle?: string;
 }

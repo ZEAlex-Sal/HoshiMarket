@@ -132,7 +132,7 @@ export default function ProductDetailModal({ product, onClose }: ProductDetailMo
                 {settings.currency_symbol} {(product.price * quantity).toFixed(2)}
               </span>
               <span className="text-xs text-[#867894] block">
-                ({settings.currency_symbol} {product.price.toFixed(2)} cada {product.unit || 'unidad'})
+                ({settings.currency_symbol} {product.price.toFixed(2)} / {product.unit || 'unidad'})
               </span>
             </div>
 

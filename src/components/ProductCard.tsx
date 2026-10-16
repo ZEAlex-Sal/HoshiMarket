@@ -52,37 +52,46 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
       className="group relative bg-white rounded-3xl border border-[#EADBEE] hover:border-[#9368B7]/50 shadow-sm hover:shadow-xl hover:shadow-[#9368B7]/10 transition-all duration-300 flex flex-col overflow-hidden cursor-pointer"
     >
       {/* ======================================================== */}
-      {/* PARTE SUPERIOR DEL CARD: ESTRELLA Y AVISO DE PROMOCIÓN */}
+      {/* PARTE SUPERIOR DEL CARD: ALTURA UNIFORME PARA TODAS LAS TARJETAS */}
       {/* ======================================================== */}
-      {promotion ? (
-        <div className={`w-full text-white px-3 py-1.5 flex items-center justify-between text-xs font-black tracking-wide shadow-sm animate-pulse-subtle ${
-          promotion.season_tag === 'vencimiento'
-            ? 'bg-gradient-to-r from-amber-600 via-rose-600 to-amber-700'
-            : 'bg-gradient-to-r from-[#9368B7] via-[#FF6B8B] to-[#9368B7]'
-        }`}>
-          <div className="flex items-center gap-1.5 truncate">
-            {promotion.season_tag === 'vencimiento' ? (
-              <Clock className="w-3.5 h-3.5 text-amber-200 flex-shrink-0" />
-            ) : (
-              <Star className="w-3.5 h-3.5 text-amber-300 fill-amber-300 flex-shrink-0 animate-spin" style={{ animationDuration: '6s' }} />
-            )}
-            <span className="truncate uppercase text-[11px] font-black">
-              {promotion.badge_text || 'EN PROMOCIÓN'}
+      <div className="h-7 w-full flex-shrink-0 flex items-center">
+        {promotion ? (
+          <div className={`w-full h-full text-white px-3 flex items-center justify-between text-xs font-black tracking-wide shadow-sm animate-pulse-subtle ${
+            promotion.season_tag === 'vencimiento'
+              ? 'bg-gradient-to-r from-amber-600 via-rose-600 to-amber-700'
+              : 'bg-gradient-to-r from-[#9368B7] via-[#FF6B8B] to-[#9368B7]'
+          }`}>
+            <div className="flex items-center gap-1.5 truncate">
+              {promotion.season_tag === 'vencimiento' ? (
+                <Clock className="w-3 h-3 text-amber-200 flex-shrink-0" />
+              ) : (
+                <Star className="w-3 h-3 text-amber-300 fill-amber-300 flex-shrink-0 animate-spin" style={{ animationDuration: '6s' }} />
+              )}
+              <span className="truncate uppercase text-[10px] font-black">
+                {promotion.badge_text || 'EN PROMOCIÓN'}
+              </span>
+            </div>
+            <span className="text-[9px] bg-white/20 backdrop-blur-xs px-1.5 py-0.2 rounded-full uppercase flex-shrink-0 font-bold">
+              {promotion.type.toUpperCase()}
             </span>
           </div>
-          <span className="text-[10px] bg-white/20 backdrop-blur-xs px-2 py-0.5 rounded-full uppercase flex-shrink-0 font-bold">
-            {promotion.type.toUpperCase()}
-          </span>
-        </div>
-      ) : product.is_featured ? (
-        <div className="w-full bg-[#EFE6F7] text-[#9368B7] px-3 py-1 flex items-center justify-between text-[11px] font-bold border-b border-[#EADBEE]">
-          <span className="flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-[#9368B7]" />
-            Favorito de la Tienda
-          </span>
-          <span className="text-[10px] text-[#6B5E78]">Hoshi Choice</span>
-        </div>
-      ) : null}
+        ) : product.is_featured ? (
+          <div className="w-full h-full bg-[#EFE6F7] text-[#9368B7] px-3 flex items-center justify-between text-[10px] font-bold border-b border-[#EADBEE]">
+            <span className="flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-[#9368B7]" />
+              Favorito de la Tienda
+            </span>
+            <span className="text-[9px] text-[#6B5E78]">Hoshi Choice</span>
+          </div>
+        ) : (
+          <div className="w-full h-full bg-[#FAF8F5] text-[#867894] px-3 flex items-center justify-between text-[10px] font-medium border-b border-[#F3EDF8]">
+            <span className="font-semibold text-[#9368B7] uppercase tracking-wider text-[9px]">
+              {product.category_name || 'Hoshi Market'}
+            </span>
+            <span className="text-[9px] text-[#9D91A8]">Original</span>
+          </div>
+        )}
+      </div>
 
       {/* Image Container with Zoom Effect */}
       <div className="relative aspect-square w-full bg-[#FAF8F5] overflow-hidden flex items-center justify-center p-3">
@@ -123,27 +132,27 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
       </div>
 
       {/* Product Content & Details */}
-      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-        <div className="space-y-1">
+      <div className="p-3.5 sm:p-4 flex-1 flex flex-col justify-between space-y-2.5">
+        <div className="space-y-1.5">
           {/* Category & Korean Subtitle */}
-          <div className="flex items-center justify-between text-[11px] text-[#867894]">
-            <span className="font-semibold uppercase tracking-wider">
+          <div className="h-4 flex items-center justify-between text-[10px] text-[#867894] overflow-hidden">
+            <span className="font-semibold uppercase tracking-wider truncate max-w-[120px]">
               {product.category_name || 'Coreano'}
             </span>
             {product.korean_name && (
-              <span className="font-medium text-[#9368B7] bg-[#EFE6F7] px-1.5 py-0.2 rounded text-[10px]">
+              <span className="font-medium text-[#9368B7] bg-[#EFE6F7] px-1.5 py-0.2 rounded text-[9px] truncate max-w-[100px]">
                 {product.korean_name}
               </span>
             )}
           </div>
 
-          {/* Product Name */}
-          <h3 className="font-bold text-sm md:text-base text-[#261C30] leading-snug line-clamp-2 group-hover:text-[#9368B7] transition-colors">
+          {/* Product Name (Uniform 2-line height) */}
+          <h3 className="h-10 font-bold text-xs sm:text-sm text-[#261C30] leading-snug line-clamp-2 group-hover:text-[#9368B7] transition-colors flex items-start">
             {product.name}
           </h3>
 
-          {/* Description snippet */}
-          <p className="text-xs text-[#6B5E78] line-clamp-2 leading-relaxed">
+          {/* Description snippet (Uniform 2-line height) */}
+          <p className="h-8 text-[11px] text-[#6B5E78] line-clamp-2 leading-snug overflow-hidden">
             {product.description}
           </p>
         </div>
@@ -152,18 +161,18 @@ export default function ProductCard({ product, onOpenDetail }: ProductCardProps)
         <div className="pt-2 border-t border-[#F3EDF8] flex items-center justify-between gap-2">
           <div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-lg md:text-xl font-black text-[#261C30]">
+              <span className="text-base sm:text-lg font-black text-[#261C30]">
                 {settings.currency_symbol} {product.price.toFixed(2)}
               </span>
               {product.original_price && product.original_price > product.price && (
-                <span className="text-xs text-[#9D91A8] line-through font-semibold">
+                <span className="text-[10px] text-[#9D91A8] line-through font-semibold">
                   {settings.currency_symbol} {product.original_price.toFixed(2)}
                 </span>
               )}
             </div>
             {product.unit && (
-              <span className="text-[10px] text-[#867894] font-medium block">
-                por {product.unit}
+              <span className="text-[10px] text-[#867894] font-medium block truncate max-w-[100px]">
+                {product.unit}
               </span>
             )}
           </div>

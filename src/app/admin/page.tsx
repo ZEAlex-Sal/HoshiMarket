@@ -968,11 +968,37 @@ export default function AdminPage() {
               </div>
 
               <div>
-                <label className="font-bold text-[#261C30] block mb-1">Aviso Superior (Banner)</label>
+                <label className="font-bold text-[#261C30] block mb-1">Aviso Superior (Barra de Notificaciones)</label>
                 <textarea
                   rows={2}
                   value={settings.announcement_banner}
                   onChange={(e) => updateSettings({ announcement_banner: e.target.value })}
+                  placeholder="¡Bienvenidos a Hoshi Market! Envíos en Huánuco..."
+                  className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] resize-none"
+                />
+                <span className="text-[10px] text-[#867894] mt-0.5 block">
+                  Aparece en la cinta morada superior de la tienda junto al icono de estrella giratoria.
+                </span>
+              </div>
+
+              <div>
+                <label className="font-bold text-[#261C30] block mb-1">Título Principal del Banner</label>
+                <input
+                  type="text"
+                  value={settings.hero_title || ''}
+                  onChange={(e) => updateSettings({ hero_title: e.target.value })}
+                  placeholder="Sabores, Ramens y K-Culture directamente a tu mesa"
+                  className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7]"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-[#261C30] block mb-1">Subtítulo / Descripción del Banner</label>
+                <textarea
+                  rows={3}
+                  value={settings.hero_subtitle || ''}
+                  onChange={(e) => updateSettings({ hero_subtitle: e.target.value })}
+                  placeholder="Revisa nuestro catálogo de más de 500 productos coreanos originales..."
                   className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] resize-none"
                 />
               </div>

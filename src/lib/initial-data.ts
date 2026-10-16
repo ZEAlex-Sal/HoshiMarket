@@ -10,7 +10,9 @@ export const INITIAL_SETTINGS: StoreSettings = {
   delivery_available: true,
   pickup_available: true,
   active_campaign: "general",
-  announcement_banner: "✨ ¡Bienvenidos a Hoshi Market! Envíos en Huánuco y recojo en Jr. Crespo Castillo 614. ¡Revisa nuestras promos 2x1 y 3x2!"
+  announcement_banner: "¡Bienvenidos a Hoshi Market! Envíos en Huánuco y recojo en Jr. Crespo Castillo 614. ¡Revisa nuestras promos 2x1 y 3x2!",
+  hero_title: "Sabores, Ramens y K-Culture directamente a tu mesa",
+  hero_subtitle: "Revisa nuestro catálogo de más de 500 productos coreanos originales. Agrega tus favoritos, aprovecha las promociones 2x1 y 3x2 y envía tu pedido directamente a nuestro WhatsApp oficial para coordinar recojo o delivery."
 };
 
 export const INITIAL_CATEGORIES: Category[] = [
