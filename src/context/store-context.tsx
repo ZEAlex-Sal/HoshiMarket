@@ -62,7 +62,7 @@ interface StoreContextType {
   importProductsFromExcel: (items: Array<{ code?: string; name: string; price: number; stock?: number; category?: string }>) => { updated: number; created: number };
 
   // Store Settings
-  updateSettings: (updates: Partial<StoreSettings>) => void;
+  updateSettings: (updates: Partial<StoreSettings>) => Promise<boolean>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -628,36 +628,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return { updated: updatedCount, created: createdCount };
   };
 
-  const updateSettings = (updates: Partial<StoreSettings>) => {
+  const updateSettings = async (updates: Partial<StoreSettings>): Promise<boolean> => {
     lastMutationTimeRef.current = Date.now();
-    setSettings(prev => {
-      const newSettings = { ...prev, ...updates };
-      try {
-        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(newSettings));
-      } catch {}
+    const newSettings = { ...settings, ...updates };
+    saveSettings(newSettings);
 
-      if (settingsTimeoutRef.current) {
-        clearTimeout(settingsTimeoutRef.current);
+    try {
+      const res = await fetch('/api/store', {
+        method: 'POST',
+        headers: getCustomHeaders(),
+        body: JSON.stringify({ action: 'update_settings', payload: newSettings })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        console.error('Error saving settings:', data.error);
+        setCloudErrorDetail(data.error || 'Error al guardar configuración');
+        return false;
       }
-      settingsTimeoutRef.current = setTimeout(async () => {
-        try {
-          const res = await fetch('/api/store', {
-            method: 'POST',
-            headers: getCustomHeaders(),
-            body: JSON.stringify({ action: 'update_settings', payload: newSettings })
-          });
-          const data = await res.json();
-          if (!data.success) {
-            console.error('Error saving settings:', data.error);
-            setCloudErrorDetail(data.error || 'Error al guardar configuración');
-          }
-        } catch (err: any) {
-          console.error('Network error saving settings:', err);
-        }
-      }, 350);
-
-      return newSettings;
-    });
+      return true;
+    } catch (err: any) {
+      console.error('Network error saving settings:', err);
+      return false;
+    }
   };
 
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);

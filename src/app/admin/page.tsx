@@ -143,6 +143,46 @@ export default function AdminPage() {
     is_active: true
   });
 
+  // Store Settings Form state (for explicit Save button when edited)
+  const [settingsForm, setSettingsForm] = useState(settings);
+  const [isSettingsDirty, setIsSettingsDirty] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [settingsSavedSuccess, setSettingsSavedSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!isSettingsDirty) {
+      setSettingsForm(settings);
+    }
+  }, [settings, isSettingsDirty]);
+
+  const hasSettingsEdited = isSettingsDirty && (
+    (settingsForm.store_name || '') !== (settings.store_name || '') ||
+    (settingsForm.address || '') !== (settings.address || '') ||
+    (settingsForm.whatsapp_number || '') !== (settings.whatsapp_number || '') ||
+    (settingsForm.phone_display || '') !== (settings.phone_display || '') ||
+    (settingsForm.announcement_banner || '') !== (settings.announcement_banner || '') ||
+    (settingsForm.hero_title || '') !== (settings.hero_title || '') ||
+    (settingsForm.hero_subtitle || '') !== (settings.hero_subtitle || '')
+  );
+
+  const handleSettingsChange = (updates: Partial<typeof settings>) => {
+    setSettingsForm(prev => ({ ...prev, ...updates }));
+    setIsSettingsDirty(true);
+    setSettingsSavedSuccess(false);
+  };
+
+  const handleSaveSettings = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsSavingSettings(true);
+    const ok = await updateSettings(settingsForm);
+    setIsSavingSettings(false);
+    if (ok) {
+      setIsSettingsDirty(false);
+      setSettingsSavedSuccess(true);
+      setTimeout(() => setSettingsSavedSuccess(false), 3500);
+    }
+  };
+
   // Camera & Gallery Image Upload state
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
@@ -972,18 +1012,32 @@ export default function AdminPage() {
         {/* TAB 5: CONFIGURACIÓN TIENDA */}
         {/* ======================================================== */}
         {activeTab === 'settings' && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EADBEE] shadow-sm max-w-2xl mx-auto space-y-5">
-            <h3 className="text-base font-black text-[#261C30]">
-              Datos Generales de Hoshi Market
-            </h3>
+          <form onSubmit={handleSaveSettings} className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EADBEE] shadow-sm max-w-2xl mx-auto space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-black text-[#261C30]">
+                  Datos Generales de Hoshi Market
+                </h3>
+                <p className="text-[11px] text-[#867894] mt-0.5">
+                  Personaliza la información de contacto y los textos principales de la tienda.
+                </p>
+              </div>
+
+              {settingsSavedSuccess && !hasSettingsEdited && (
+                <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-bold">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>¡Cambios guardados!</span>
+                </div>
+              )}
+            </div>
 
             <div className="space-y-4 text-xs">
               <div>
                 <label className="font-bold text-[#261C30] block mb-1">Nombre Comercial</label>
                 <input
                   type="text"
-                  value={settings.store_name}
-                  onChange={(e) => updateSettings({ store_name: e.target.value })}
+                  value={settingsForm.store_name || ''}
+                  onChange={(e) => handleSettingsChange({ store_name: e.target.value })}
                   className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7]"
                 />
               </div>
@@ -992,8 +1046,8 @@ export default function AdminPage() {
                 <label className="font-bold text-[#261C30] block mb-1">Dirección del Local Físico</label>
                 <input
                   type="text"
-                  value={settings.address}
-                  onChange={(e) => updateSettings({ address: e.target.value })}
+                  value={settingsForm.address || ''}
+                  onChange={(e) => handleSettingsChange({ address: e.target.value })}
                   className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7]"
                 />
               </div>
@@ -1003,8 +1057,8 @@ export default function AdminPage() {
                   <label className="font-bold text-[#261C30] block mb-1">Número de WhatsApp (con código país)</label>
                   <input
                     type="text"
-                    value={settings.whatsapp_number}
-                    onChange={(e) => updateSettings({ whatsapp_number: e.target.value })}
+                    value={settingsForm.whatsapp_number || ''}
+                    onChange={(e) => handleSettingsChange({ whatsapp_number: e.target.value })}
                     className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7]"
                     placeholder="51969399589"
                   />
@@ -1013,8 +1067,8 @@ export default function AdminPage() {
                   <label className="font-bold text-[#261C30] block mb-1">Texto Visible del WhatsApp</label>
                   <input
                     type="text"
-                    value={settings.phone_display}
-                    onChange={(e) => updateSettings({ phone_display: e.target.value })}
+                    value={settingsForm.phone_display || ''}
+                    onChange={(e) => handleSettingsChange({ phone_display: e.target.value })}
                     className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7]"
                     placeholder="+51 969 399 589"
                   />
@@ -1025,8 +1079,8 @@ export default function AdminPage() {
                 <label className="font-bold text-[#261C30] block mb-1">Aviso Superior (Barra de Notificaciones)</label>
                 <textarea
                   rows={2}
-                  value={settings.announcement_banner}
-                  onChange={(e) => updateSettings({ announcement_banner: e.target.value })}
+                  value={settingsForm.announcement_banner || ''}
+                  onChange={(e) => handleSettingsChange({ announcement_banner: e.target.value })}
                   placeholder="¡Bienvenidos a Hoshi Market! Envíos en Huánuco..."
                   className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] resize-none"
                 />
@@ -1039,8 +1093,8 @@ export default function AdminPage() {
                 <label className="font-bold text-[#261C30] block mb-1">Título Principal del Banner</label>
                 <input
                   type="text"
-                  value={settings.hero_title || ''}
-                  onChange={(e) => updateSettings({ hero_title: e.target.value })}
+                  value={settingsForm.hero_title || ''}
+                  onChange={(e) => handleSettingsChange({ hero_title: e.target.value })}
                   placeholder="Sabores, Ramens y K-Culture directamente a tu mesa"
                   className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7]"
                 />
@@ -1050,14 +1104,52 @@ export default function AdminPage() {
                 <label className="font-bold text-[#261C30] block mb-1">Subtítulo / Descripción del Banner</label>
                 <textarea
                   rows={3}
-                  value={settings.hero_subtitle || ''}
-                  onChange={(e) => updateSettings({ hero_subtitle: e.target.value })}
+                  value={settingsForm.hero_subtitle || ''}
+                  onChange={(e) => handleSettingsChange({ hero_subtitle: e.target.value })}
                   placeholder="Revisa nuestro catálogo de más de 500 productos coreanos originales..."
                   className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] resize-none"
                 />
               </div>
+
+              {hasSettingsEdited && (
+                <div className="pt-4 border-t border-[#F3EDF8] flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold text-[#9368B7]">
+                    Tienes cambios sin guardar
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSettingsForm(settings);
+                        setIsSettingsDirty(false);
+                      }}
+                      disabled={isSavingSettings}
+                      className="px-4 py-2.5 rounded-xl border border-[#EADBEE] text-[#6B5E78] hover:bg-[#FAF8F5] font-bold text-xs transition-colors"
+                    >
+                      Descartar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingSettings}
+                      className="bg-[#9368B7] hover:bg-[#7E52A3] text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md flex items-center gap-2 transition-all disabled:opacity-50"
+                    >
+                      {isSavingSettings ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Guardando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>Guardar Cambios</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          </form>
         )}
       </main>
 
