@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { INITIAL_PRODUCTS, INITIAL_CATEGORIES, INITIAL_PROMOTIONS, INITIAL_SETTINGS } from '@/lib/initial-data';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 // Helper to get Supabase client on server
 function getServerSupabase(req?: Request) {

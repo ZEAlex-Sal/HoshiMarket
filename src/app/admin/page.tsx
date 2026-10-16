@@ -86,20 +86,6 @@ export default function AdminPage() {
     }
   }, []);
 
-  // Auto-sync local catalog to cloud if cloud is connected and products exist
-  useEffect(() => {
-    if (isAuthenticated && cloudSyncStatus === 'connected' && products.length > 0) {
-      if (typeof window !== 'undefined') {
-        const lastSyncKey = `hoshi_autosynced_${products.length}`;
-        const hasSynced = sessionStorage.getItem(lastSyncKey);
-        if (!hasSynced) {
-          sessionStorage.setItem(lastSyncKey, 'true');
-          syncAllToCloud();
-        }
-      }
-    }
-  }, [isAuthenticated, cloudSyncStatus, products.length]);
-
   // Active Tab
   const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'promotions' | 'excel' | 'settings'>('products');
 
@@ -506,53 +492,8 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Right actions: Cloud badge, Live Web, Logout */}
+          {/* Right actions: Live Web, Logout */}
           <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
-            {/* Cloud Sync Status Indicator */}
-            <div 
-              onClick={() => {
-                if (cloudSyncStatus === 'tables_needed') {
-                  setActiveTab('settings');
-                }
-              }}
-              title={cloudSyncStatus === 'tables_needed' ? 'Haz clic para ver cómo inicializar las tablas en Supabase' : undefined}
-              className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1.5 border whitespace-nowrap transition-all ${
-                cloudSyncStatus === 'connected' 
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : cloudSyncStatus === 'tables_needed'
-                  ? 'bg-amber-50 text-amber-800 border-amber-300 cursor-pointer hover:bg-amber-100 shadow-xs'
-                  : 'bg-[#FAF8F5] text-[#867894] border-[#EADBEE]'
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${
-                cloudSyncStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'
-              }`} />
-              <span>
-                {cloudSyncStatus === 'connected' 
-                  ? 'Nube Sincronizada' 
-                  : cloudSyncStatus === 'tables_needed'
-                  ? 'Falta Ejecutar SQL'
-                  : 'Modo Local'}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={async () => {
-                const res = await syncAllToCloud();
-                setSyncMessage({
-                  text: res.message,
-                  type: res.success ? 'success' : 'error'
-                });
-              }}
-              disabled={isSyncing}
-              className="text-xs font-bold bg-[#9368B7] hover:bg-[#7E52A3] text-white px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-              title="Sube los productos y ajustes de esta laptop a la nube para verlos en celulares e incógnito"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'Sincronizando...' : '☁️ Subir a la Nube'}</span>
-            </button>
-
             <Link
               href="/"
               target="_blank"
@@ -1114,151 +1055,6 @@ export default function AdminPage() {
                   placeholder="Revisa nuestro catálogo de más de 500 productos coreanos originales..."
                   className="w-full bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7] resize-none"
                 />
-              </div>
-
-              {/* Sincronización en la Nube (Supabase) */}
-              <div className="pt-5 border-t border-[#F3EDF8] space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-black text-sm text-[#261C30] flex items-center gap-2">
-                      <span>Sincronización en la Nube (Multi-Dispositivo)</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                        cloudSyncStatus === 'connected'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : cloudSyncStatus === 'tables_needed'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {cloudSyncStatus === 'connected' ? '🟢 Conectado a Supabase' : cloudSyncStatus === 'tables_needed' ? '⚠️ Tablas no creadas' : '☁️ Modo Local'}
-                      </span>
-                    </h4>
-                    <p className="text-[11px] text-[#6B5E78] mt-0.5">
-                      Permite que todos los productos, fotos y promociones creados se actualicen en tiempo real en celulares, laptops y para todos los clientes en la web.
-                    </p>
-                  </div>
-                </div>
-
-                {syncMessage && (
-                  <div className={`p-3 rounded-xl text-xs font-bold flex items-center justify-between ${
-                    syncMessage.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
-                  }`}>
-                    <span>{syncMessage.text}</span>
-                    <button onClick={() => setSyncMessage(null)} className="text-xs ml-2 hover:opacity-70">✕</button>
-                  </div>
-                )}
-
-                <div className="bg-[#FAF8F5] p-3.5 rounded-2xl border border-[#EADBEE] space-y-2.5">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div>
-                      <span className="font-bold text-xs text-[#261C30] block">
-                        Subir y sincronizar catálogo de esta laptop a la Nube
-                      </span>
-                      <span className="text-[10px] text-[#867894]">
-                        {products.length} productos listos para sincronizar
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={isSyncing}
-                      onClick={async () => {
-                        const res = await syncAllToCloud();
-                        setSyncMessage({
-                          text: res.message,
-                          type: res.success ? 'success' : 'error'
-                        });
-                      }}
-                      className="w-full sm:w-auto bg-[#9368B7] hover:bg-[#7E52A3] text-white px-4 py-2 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                      <span>{isSyncing ? 'Sincronizando...' : 'Subir a la Nube Ahora'}</span>
-                    </button>
-                  </div>
-
-                  {cloudSyncStatus === 'tables_needed' && (
-                    <div className="p-4 bg-amber-50/90 border border-amber-300 rounded-2xl text-xs text-amber-950 space-y-3 shadow-xs">
-                      <div className="flex items-start gap-2.5">
-                        <Database className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-black text-sm text-amber-900">
-                            Paso único: Inicializar Tablas en Supabase (Solo 30 segundos)
-                          </p>
-                          <p className="text-[11px] text-amber-800 mt-1 leading-relaxed">
-                            Al conectar un proyecto nuevo de Supabase, este viene en blanco sin tablas. Para que cada cambio que hagas se actualice <strong>automáticamente en tiempo real en cualquier celular y para todos los clientes</strong>, copia el código con el botón de abajo, pégalo en tu Supabase SQL Editor y dale a <strong>Run</strong>. ¡Solo se hace esta única vez en la vida del proyecto!
-                          </p>
-                          {cloudErrorDetail && (
-                            <div className="mt-2 bg-amber-100/90 border border-amber-300/80 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-950 flex items-center gap-1.5 break-all">
-                              <span className="font-bold flex-shrink-0">Detalle de Supabase:</span>
-                              <span>{cloudErrorDetail}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Action buttons */}
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (typeof navigator !== 'undefined') {
-                              navigator.clipboard.writeText(HOSHI_SUPABASE_SCHEMA);
-                              setSqlCopied(true);
-                              setTimeout(() => setSqlCopied(false), 4000);
-                            }
-                          }}
-                          className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all shadow-xs"
-                        >
-                          {sqlCopied ? <CheckCheck className="w-4 h-4 text-emerald-200" /> : <Copy className="w-4 h-4" />}
-                          <span>{sqlCopied ? '¡Código SQL Copiado al Portapapeles!' : 'Copiar Código SQL (1 Clic)'}</span>
-                        </button>
-
-                        <a
-                          href="https://supabase.com/dashboard"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="bg-white hover:bg-amber-100/70 text-amber-900 border border-amber-300 font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-xs"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>Abrir Supabase SQL Editor</span>
-                        </a>
-
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            await reloadFromCloud();
-                          }}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-xs"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" />
-                          <span>Ya lo ejecuté, Verificar ahora</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setShowSqlCode(!showSqlCode)}
-                          className="text-amber-800 hover:text-amber-950 font-bold px-2 py-1 underline text-[11px]"
-                        >
-                          {showSqlCode ? 'Ocultar código' : 'Ver código SQL aquí'}
-                        </button>
-                      </div>
-
-                      {/* Code preview toggle */}
-                      {showSqlCode && (
-                        <div className="mt-2 space-y-1">
-                          <textarea
-                            readOnly
-                            rows={8}
-                            value={HOSHI_SUPABASE_SCHEMA}
-                            className="w-full font-mono text-[10px] p-2.5 bg-white border border-amber-200 rounded-xl text-neutral-800"
-                            onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-                          />
-                          <p className="text-[10px] text-amber-700">
-                            Tip: Haz clic adentro y presiona Ctrl + A para seleccionar todo.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </div>

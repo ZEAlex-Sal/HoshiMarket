@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Product, Category, Promotion, StoreSettings, CartItem, SeasonCampaign } from '@/types';
 import { 
   INITIAL_PRODUCTS, 
@@ -41,7 +41,7 @@ interface StoreContextType {
   cloudErrorDetail?: string;
   isSyncing: boolean;
   syncAllToCloud: () => Promise<{ success: boolean; message: string }>;
-  reloadFromCloud: () => Promise<void>;
+  reloadFromCloud: (force?: boolean) => Promise<void>;
 
   // Admin CRUD Products
   addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
@@ -92,6 +92,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [cloudErrorDetail, setCloudErrorDetail] = useState<string>('');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
+  const lastMutationTimeRef = useRef<number>(0);
+  const settingsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Helper to attach custom headers if Supabase was configured via admin panel
   const getCustomHeaders = () => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -105,7 +108,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Fetch latest data from cloud (/api/store)
-  const reloadFromCloud = async () => {
+  const reloadFromCloud = async (force: boolean = false) => {
+    if (!force && Date.now() - lastMutationTimeRef.current < 4000) {
+      return;
+    }
     try {
       const res = await fetch(`/api/store?t=${Date.now()}`, {
         cache: 'no-store',
@@ -116,6 +122,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
       });
       const data = await res.json();
+      if (!force && Date.now() - lastMutationTimeRef.current < 4000) {
+        return;
+      }
       if (data.connected && data.tablesReady) {
         if (data.products && Array.isArray(data.products) && data.products.length > 0) {
           setProducts(data.products);
@@ -348,12 +357,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Admin: Products CRUD
   const addProduct = async (productData: Omit<Product, 'id'>) => {
+    lastMutationTimeRef.current = Date.now();
     const newProduct: Product = {
       ...productData,
       id: `prod-${Date.now()}`,
       created_at: new Date().toISOString()
     };
-    saveProducts([newProduct, ...products]);
+    setProducts(prev => {
+      const next = [newProduct, ...prev];
+      try {
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
 
     try {
       const res = await fetch('/api/store', {
@@ -372,8 +388,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateProduct = async (id: string, updates: Partial<Product>) => {
-    const updated = products.map(p => p.id === id ? { ...p, ...updates } : p);
-    saveProducts(updated);
+    lastMutationTimeRef.current = Date.now();
+    setProducts(prev => {
+      const updated = prev.map(p => p.id === id ? { ...p, ...updates } : p);
+      try {
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
 
     try {
       const res = await fetch('/api/store', {
@@ -411,8 +433,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteProduct = async (id: string) => {
-    const updated = products.filter(p => p.id !== id);
-    saveProducts(updated);
+    lastMutationTimeRef.current = Date.now();
+    setProducts(prev => {
+      const updated = prev.filter(p => p.id !== id);
+      try {
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     removeFromCart(id);
 
     try {
@@ -426,6 +454,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Admin: Categories CRUD
   const addCategory = async (categoryData: { name: string; icon: string; description?: string }) => {
+    lastMutationTimeRef.current = Date.now();
     const slug = categoryData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const newCategory: Category = {
       id: `cat-${Date.now()}`,
@@ -446,6 +475,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateCategory = async (id: string, updates: Partial<Category>) => {
+    lastMutationTimeRef.current = Date.now();
     const updated = categories.map(c => c.id === id ? { ...c, ...updates } : c);
     saveCategories(updated);
 
@@ -457,6 +487,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteCategory = async (id: string) => {
+    lastMutationTimeRef.current = Date.now();
     const updated = categories.filter(c => c.id !== id);
     saveCategories(updated);
 
@@ -469,6 +500,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Admin: Promotions CRUD
   const addPromotion = async (promoData: Omit<Promotion, 'id'>) => {
+    lastMutationTimeRef.current = Date.now();
     const newPromo: Promotion = {
       ...promoData,
       id: `promo-${Date.now()}`
@@ -495,6 +527,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updatePromotion = async (id: string, updates: Partial<Promotion>) => {
+    lastMutationTimeRef.current = Date.now();
     const updatedPromos = promotions.map(p => p.id === id ? { ...p, ...updates } : p);
     savePromotions(updatedPromos);
 
@@ -519,6 +552,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deletePromotion = async (id: string) => {
+    lastMutationTimeRef.current = Date.now();
     const updatedPromos = promotions.filter(p => p.id !== id);
     savePromotions(updatedPromos);
     const updatedProducts = products.map(p => p.promotion_id === id ? { ...p, promotion_id: undefined } : p);
@@ -533,6 +567,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Sync from Billing Excel / CSV
   const importProductsFromExcel = (items: Array<{ code?: string; name: string; price: number; stock?: number; category?: string }>) => {
+    lastMutationTimeRef.current = Date.now();
     let updatedCount = 0;
     let createdCount = 0;
     const currentProducts = [...products];
@@ -593,24 +628,36 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return { updated: updatedCount, created: createdCount };
   };
 
-  const updateSettings = async (updates: Partial<StoreSettings>) => {
-    const newSettings = { ...settings, ...updates };
-    saveSettings(newSettings);
+  const updateSettings = (updates: Partial<StoreSettings>) => {
+    lastMutationTimeRef.current = Date.now();
+    setSettings(prev => {
+      const newSettings = { ...prev, ...updates };
+      try {
+        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(newSettings));
+      } catch {}
 
-    try {
-      const res = await fetch('/api/store', {
-        method: 'POST',
-        headers: getCustomHeaders(),
-        body: JSON.stringify({ action: 'update_settings', payload: newSettings })
-      });
-      const data = await res.json();
-      if (!data.success) {
-        console.error('Error saving settings:', data.error);
-        setCloudErrorDetail(data.error || 'Error al guardar configuración');
+      if (settingsTimeoutRef.current) {
+        clearTimeout(settingsTimeoutRef.current);
       }
-    } catch (err: any) {
-      console.error('Network error saving settings:', err);
-    }
+      settingsTimeoutRef.current = setTimeout(async () => {
+        try {
+          const res = await fetch('/api/store', {
+            method: 'POST',
+            headers: getCustomHeaders(),
+            body: JSON.stringify({ action: 'update_settings', payload: newSettings })
+          });
+          const data = await res.json();
+          if (!data.success) {
+            console.error('Error saving settings:', data.error);
+            setCloudErrorDetail(data.error || 'Error al guardar configuración');
+          }
+        } catch (err: any) {
+          console.error('Network error saving settings:', err);
+        }
+      }, 350);
+
+      return newSettings;
+    });
   };
 
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
