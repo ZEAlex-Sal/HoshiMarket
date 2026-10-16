@@ -7,18 +7,19 @@ import { MapPin, Phone, ExternalLink, Navigation } from 'lucide-react';
 export default function Footer() {
   const { settings } = useStore();
 
-  const mapAddressQuery = encodeURIComponent(
-    `${settings.address || 'Jr. Crespo Castillo 614'}, Huánuco, Perú`
-  );
-  const mapEmbedUrl = `https://maps.google.com/maps?q=${mapAddressQuery}&t=&z=17&ie=UTF8&iwloc=&output=embed`;
-  const mapDirectionsUrl = `https://www.google.com/maps/search/?api=1&query=${mapAddressQuery}`;
+  // Exact Google Maps Business Embed for "Hoshi, Jirón Crespo Castillo 614, Huánuco 10001"
+  // Supports native two-finger pan on mobile & exact centered red business pin
+  const mapEmbedUrl =
+    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d982.5178814!2d-76.2391595!3d-9.9279917!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91a7c30064eaaebb%3A0xec282224d02b6e71!2sHoshi!5e0!3m2!1ses!2spe!4v1710000000000!5m2!1ses!2spe';
+  const mapDirectionsUrl =
+    'https://www.google.com/maps/search/?api=1&query=Hoshi+Jiron+Crespo+Castillo+614+Huanuco&query_place_id=ChIJu67qZADDp5ERcW4r0CQiKOw';
 
   return (
     <footer className="w-full bg-white border-t border-[#EADBEE] mt-16 pt-12 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-8 items-center">
           {/* LADO IZQUIERDO: INFORMACIÓN DE LA TIENDA */}
-          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Brand & Bio */}
             <div className="sm:col-span-2 space-y-2.5">
               <div className="flex items-center gap-3">
@@ -98,19 +99,19 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* LADO DERECHO: RECTÁNGULO DEL MAPA COMPACTO */}
-          <div className="lg:col-span-5 rounded-3xl border border-[#EADBEE] bg-[#FAF8F5] overflow-hidden shadow-xs">
-            <div className="px-3.5 py-2.5 flex items-center justify-between gap-2 border-b border-[#EADBEE] bg-white">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
+          {/* LADO DERECHO: RECTÁNGULO DEL MAPA */}
+          <div className="lg:col-span-6 rounded-3xl border border-[#EADBEE] bg-[#FAF8F5] overflow-hidden shadow-sm">
+            <div className="px-4 py-3 flex items-center justify-between gap-2 border-b border-[#EADBEE] bg-white">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-4 h-4 text-rose-500 fill-rose-500/20" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-xs font-black text-[#261C30] truncate">
+                  <h4 className="text-xs sm:text-sm font-black text-[#261C30] truncate">
                     ¿Cómo llegar a {settings.store_name}?
                   </h4>
-                  <p className="text-[10px] text-[#6B5E78] truncate">
-                    {settings.address} • Huánuco
+                  <p className="text-[11px] text-[#6B5E78] truncate">
+                    {settings.address} • Huánuco, Perú
                   </p>
                 </div>
               </div>
@@ -119,15 +120,15 @@ export default function Footer() {
                 href={mapDirectionsUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center gap-1 bg-[#9368B7] hover:bg-[#7E52A3] text-white text-[11px] font-bold px-2.5 py-1.5 rounded-xl shadow-xs transition-colors flex-shrink-0"
+                className="inline-flex items-center justify-center gap-1.5 bg-[#9368B7] hover:bg-[#7E52A3] text-white text-xs font-bold px-3 py-2 rounded-xl shadow-xs transition-colors flex-shrink-0"
               >
-                <Navigation className="w-3 h-3" />
-                <span>Abrir Mapa</span>
-                <ExternalLink className="w-2.5 h-2.5 opacity-80" />
+                <Navigation className="w-3.5 h-3.5" />
+                <span>Abrir en Maps</span>
+                <ExternalLink className="w-3 h-3 opacity-80" />
               </a>
             </div>
 
-            <div className="relative w-full h-52 sm:h-56 lg:h-44 bg-[#F3EDF8]">
+            <div className="relative w-full h-64 sm:h-72 lg:h-64 bg-[#F3EDF8]">
               <iframe
                 title={`Ubicación de ${settings.store_name}`}
                 src={mapEmbedUrl}
