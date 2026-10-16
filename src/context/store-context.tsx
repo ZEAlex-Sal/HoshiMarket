@@ -355,22 +355,40 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
     saveProducts([newProduct, ...products]);
 
-    fetch('/api/store', {
-      method: 'POST',
-      headers: getCustomHeaders(),
-      body: JSON.stringify({ action: 'add_product', payload: newProduct })
-    }).catch(() => {});
+    try {
+      const res = await fetch('/api/store', {
+        method: 'POST',
+        headers: getCustomHeaders(),
+        body: JSON.stringify({ action: 'add_product', payload: newProduct })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        console.error('Error saving product to Supabase:', data.error);
+        setCloudErrorDetail(data.error || 'Error al guardar producto');
+      }
+    } catch (err: any) {
+      console.error('Network error saving product:', err);
+    }
   };
 
   const updateProduct = async (id: string, updates: Partial<Product>) => {
     const updated = products.map(p => p.id === id ? { ...p, ...updates } : p);
     saveProducts(updated);
 
-    fetch('/api/store', {
-      method: 'POST',
-      headers: getCustomHeaders(),
-      body: JSON.stringify({ action: 'update_product', payload: { id, updates } })
-    }).catch(() => {});
+    try {
+      const res = await fetch('/api/store', {
+        method: 'POST',
+        headers: getCustomHeaders(),
+        body: JSON.stringify({ action: 'update_product', payload: { id, updates } })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        console.error('Error updating product in Supabase:', data.error);
+        setCloudErrorDetail(data.error || 'Error al actualizar producto');
+      }
+    } catch (err: any) {
+      console.error('Network error updating product:', err);
+    }
 
     // Also update cart if product price or promo changed
     const updatedCart = cart.map(item => {
@@ -397,11 +415,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     saveProducts(updated);
     removeFromCart(id);
 
-    fetch('/api/store', {
-      method: 'POST',
-      headers: getCustomHeaders(),
-      body: JSON.stringify({ action: 'delete_product', payload: { id } })
-    }).catch(() => {});
+    try {
+      await fetch('/api/store', {
+        method: 'POST',
+        headers: getCustomHeaders(),
+        body: JSON.stringify({ action: 'delete_product', payload: { id } })
+      });
+    } catch {}
   };
 
   // Admin: Categories CRUD

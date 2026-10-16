@@ -174,6 +174,64 @@ function sanitizeCategory(c: any) {
   };
 }
 
+// Partial update sanitizers that preserve existing fields
+function sanitizeProductUpdates(updates: any) {
+  const clean: any = { updated_at: new Date().toISOString() };
+  if (updates.name !== undefined) clean.name = String(updates.name);
+  if (updates.korean_name !== undefined) clean.korean_name = String(updates.korean_name || '').trim() || null;
+  if (updates.code !== undefined) clean.code = String(updates.code || '').trim() || null;
+  if (updates.description !== undefined) clean.description = String(updates.description || '');
+  if (updates.price !== undefined) clean.price = Number(updates.price) || 0;
+  if (updates.original_price !== undefined) {
+    clean.original_price = updates.original_price && !isNaN(Number(updates.original_price)) ? Number(updates.original_price) : null;
+  }
+  if (updates.unit !== undefined) clean.unit = String(updates.unit || 'und');
+  if (updates.image_url !== undefined) clean.image_url = String(updates.image_url || '');
+  if (updates.in_stock !== undefined) clean.in_stock = Boolean(updates.in_stock);
+  if (updates.stock_quantity !== undefined) clean.stock_quantity = Number(updates.stock_quantity) || 0;
+  if (updates.is_featured !== undefined) clean.is_featured = Boolean(updates.is_featured);
+  if (updates.category_id !== undefined) {
+    clean.category_id = String(updates.category_id || '').trim() || null;
+  }
+  if (updates.promotion_id !== undefined) {
+    clean.promotion_id = String(updates.promotion_id || '').trim() || null;
+  }
+  if (updates.tags !== undefined) {
+    clean.tags = Array.isArray(updates.tags) ? updates.tags : [];
+  }
+  return clean;
+}
+
+function sanitizeCategoryUpdates(updates: any) {
+  const clean: any = {};
+  if (updates.name !== undefined) clean.name = String(updates.name);
+  if (updates.slug !== undefined) clean.slug = String(updates.slug);
+  if (updates.icon !== undefined) clean.icon = String(updates.icon || '✨');
+  if (updates.order !== undefined) clean.order = Number(updates.order) || 1;
+  if (updates.description !== undefined) clean.description = String(updates.description || '');
+  if (updates.is_active !== undefined) clean.is_active = Boolean(updates.is_active);
+  return clean;
+}
+
+function sanitizePromotionUpdates(updates: any) {
+  const allowedTags = ['todos', 'halloween', 'navidad', 'san_valentin', 'verano', 'aniversario', 'general'];
+  const allowedTypes = ['2x1', '3x2', 'discount_percent', 'combo', 'fixed_price'];
+  const clean: any = {};
+  if (updates.name !== undefined) clean.name = String(updates.name);
+  if (updates.type !== undefined) clean.type = allowedTypes.includes(updates.type) ? updates.type : '2x1';
+  if (updates.badge_text !== undefined) clean.badge_text = String(updates.badge_text);
+  if (updates.badge_color !== undefined) clean.badge_color = String(updates.badge_color);
+  if (updates.discount_value !== undefined) clean.discount_value = Number(updates.discount_value) || 0;
+  if (updates.season_tag !== undefined) clean.season_tag = allowedTags.includes(updates.season_tag) ? updates.season_tag : 'general';
+  if (updates.is_active !== undefined) clean.is_active = Boolean(updates.is_active);
+  if (updates.product_ids !== undefined) clean.product_ids = Array.isArray(updates.product_ids) ? updates.product_ids : [];
+  if (updates.description !== undefined) clean.description = String(updates.description || '');
+  if (updates.banner_message !== undefined) clean.banner_message = String(updates.banner_message || '');
+  if (updates.start_date !== undefined) clean.start_date = String(updates.start_date || '').trim() || null;
+  if (updates.end_date !== undefined) clean.end_date = String(updates.end_date || '').trim() || null;
+  return clean;
+}
+
 export async function GET(request: Request) {
   const noCacheHeaders = {
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
@@ -309,8 +367,7 @@ export async function POST(request: Request) {
 
       case 'update_product': {
         const { id, updates } = payload;
-        const clean = sanitizeProduct({ ...updates, id });
-        delete clean.created_at; // don't overwrite creation date
+        const clean = sanitizeProductUpdates(updates);
         const { data, error } = await supabase.from('products').update(clean).eq('id', id).select().single();
         if (error) throw error;
         return NextResponse.json({ success: true, data });
@@ -332,8 +389,7 @@ export async function POST(request: Request) {
 
       case 'update_category': {
         const { id, updates } = payload;
-        const clean = sanitizeCategory({ ...updates, id });
-        delete clean.created_at;
+        const clean = sanitizeCategoryUpdates(updates);
         const { data, error } = await supabase.from('categories').update(clean).eq('id', id).select().single();
         if (error) throw error;
         return NextResponse.json({ success: true, data });
@@ -355,8 +411,7 @@ export async function POST(request: Request) {
 
       case 'update_promotion': {
         const { id, updates } = payload;
-        const clean = sanitizePromotion({ ...updates, id });
-        delete clean.created_at;
+        const clean = sanitizePromotionUpdates(updates);
         const { data, error } = await supabase.from('promotions').update(clean).eq('id', id).select().single();
         if (error) throw error;
         return NextResponse.json({ success: true, data });

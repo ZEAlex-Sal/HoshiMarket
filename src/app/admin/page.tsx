@@ -86,6 +86,20 @@ export default function AdminPage() {
     }
   }, []);
 
+  // Auto-sync local catalog to cloud if cloud is connected and products exist
+  useEffect(() => {
+    if (isAuthenticated && cloudSyncStatus === 'connected' && products.length > 0) {
+      if (typeof window !== 'undefined') {
+        const lastSyncKey = `hoshi_autosynced_${products.length}`;
+        const hasSynced = sessionStorage.getItem(lastSyncKey);
+        if (!hasSynced) {
+          sessionStorage.setItem(lastSyncKey, 'true');
+          syncAllToCloud();
+        }
+      }
+    }
+  }, [isAuthenticated, cloudSyncStatus, products.length]);
+
   // Active Tab
   const [activeTab, setActiveTab] = useState<'products' | 'categories' | 'promotions' | 'excel' | 'settings'>('products');
 
@@ -522,6 +536,23 @@ export default function AdminPage() {
               </span>
             </div>
 
+            <button
+              type="button"
+              onClick={async () => {
+                const res = await syncAllToCloud();
+                setSyncMessage({
+                  text: res.message,
+                  type: res.success ? 'success' : 'error'
+                });
+              }}
+              disabled={isSyncing}
+              className="text-xs font-bold bg-[#9368B7] hover:bg-[#7E52A3] text-white px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+              title="Sube los productos y ajustes de esta laptop a la nube para verlos en celulares e incógnito"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Sincronizando...' : '☁️ Subir a la Nube'}</span>
+            </button>
+
             <Link
               href="/"
               target="_blank"
@@ -606,6 +637,23 @@ export default function AdminPage() {
 
       {/* Main Admin Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+        {syncMessage && (
+          <div className={`mb-4 p-3.5 rounded-2xl text-xs font-bold flex items-center justify-between shadow-xs transition-all ${
+            syncMessage.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'
+          }`}>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <span>{syncMessage.text}</span>
+            </div>
+            <button 
+              onClick={() => setSyncMessage(null)} 
+              className="text-xs ml-2 hover:opacity-70 px-2.5 py-1 rounded-xl bg-white/70 border border-emerald-200 text-emerald-800"
+            >
+              Cerrar aviso
+            </button>
+          </div>
+        )}
+
         {/* ======================================================== */}
         {/* TAB 1: PRODUCTOS */}
         {/* ======================================================== */}
