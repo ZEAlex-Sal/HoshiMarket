@@ -102,6 +102,32 @@ export default function AdminPage() {
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
   const [editingPromo, setEditingPromo] = useState<Promotion | null>(null);
 
+  // Delete confirmation modal state
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    type: 'product' | 'category' | 'promotion';
+    id: string;
+    name: string;
+    subtitle: string;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmModal) return;
+    setIsDeleting(true);
+    try {
+      if (deleteConfirmModal.type === 'product') {
+        await deleteProduct(deleteConfirmModal.id);
+      } else if (deleteConfirmModal.type === 'category') {
+        await deleteCategory(deleteConfirmModal.id);
+      } else if (deleteConfirmModal.type === 'promotion') {
+        await deletePromotion(deleteConfirmModal.id);
+      }
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmModal(null);
+    }
+  };
+
   // Excel sync state
   const [excelPreview, setExcelPreview] = useState<any[]>([]);
   const [excelStats, setExcelStats] = useState<{ updated: number; created: number } | null>(null);
@@ -733,11 +759,14 @@ export default function AdminPage() {
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => {
-                                if (confirm(`¿Eliminar producto "${p.name}"?`)) {
-                                  deleteProduct(p.id);
-                                }
-                              }}
+                              onClick={() =>
+                                setDeleteConfirmModal({
+                                  type: 'product',
+                                  id: p.id,
+                                  name: p.name,
+                                  subtitle: 'Este producto se eliminará permanentemente del catálogo y de la base de datos.'
+                                })
+                              }
                               className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors"
                               title="Eliminar"
                             >
@@ -808,11 +837,14 @@ export default function AdminPage() {
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm(`¿Eliminar la categoría "${cat.name}"? Los productos pasarán a otra categoría.`)) {
-                            deleteCategory(cat.id);
-                          }
-                        }}
+                        onClick={() =>
+                          setDeleteConfirmModal({
+                            type: 'category',
+                            id: cat.id,
+                            name: cat.name,
+                            subtitle: 'Se eliminará esta categoría del catálogo. Los productos asociados se mantendrán en la tienda.'
+                          })
+                        }
                         className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -900,11 +932,14 @@ export default function AdminPage() {
                         Editar
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm(`¿Eliminar promoción "${pr.name}"?`)) {
-                            deletePromotion(pr.id);
-                          }
-                        }}
+                        onClick={() =>
+                          setDeleteConfirmModal({
+                            type: 'promotion',
+                            id: pr.id,
+                            name: pr.name,
+                            subtitle: 'Esta promoción dejará de aplicarse a los productos vinculados.'
+                          })
+                        }
                         className="text-xs text-rose-500 font-bold hover:underline"
                       >
                         Eliminar
@@ -1662,6 +1697,51 @@ export default function AdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: CONFIRMACIÓN DE ELIMINACIÓN */}
+      {/* ======================================================== */}
+      {deleteConfirmModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#261C30]/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 border border-[#EADBEE] shadow-2xl space-y-4 text-center animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 text-rose-500 mx-auto flex items-center justify-center">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="font-black text-base text-[#261C30]">
+                ¿Eliminar {deleteConfirmModal.type === 'product' ? 'producto' : deleteConfirmModal.type === 'category' ? 'categoría' : 'promoción'}?
+              </h3>
+              <p className="text-xs font-bold text-[#9368B7] bg-[#FAF8F5] px-3 py-1.5 rounded-xl border border-[#EADBEE] inline-block max-w-full truncate">
+                &ldquo;{deleteConfirmModal.name}&rdquo;
+              </p>
+              <p className="text-xs text-[#6B5E78] leading-relaxed pt-1">
+                {deleteConfirmModal.subtitle}
+              </p>
+            </div>
+
+            <div className="pt-2 grid grid-cols-2 gap-2.5 text-xs">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setDeleteConfirmModal(null)}
+                className="w-full py-2.5 px-4 rounded-xl border border-[#EADBEE] bg-[#FAF8F5] hover:bg-[#F3EDF8] text-[#544660] font-bold transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="w-full py-2.5 px-4 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold shadow-md shadow-rose-500/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isDeleting ? 'Eliminando...' : 'Sí, eliminar'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
