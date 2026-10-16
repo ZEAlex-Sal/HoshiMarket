@@ -1464,404 +1464,415 @@ export default function AdminPage() {
       {/* MODAL: PRODUCTO (NUEVO O EDITAR) */}
       {/* ======================================================== */}
       {isProductModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#261C30]/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 border border-[#EADBEE] shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-[#F3EDF8] pb-3">
-              <h3 className="font-black text-base text-[#261C30]">
-                {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
-              </h3>
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#261C30]/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[88vh] flex flex-col border border-[#EADBEE] shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
+            {/* Header Sticky */}
+            <div className="px-5 py-3.5 border-b border-[#F3EDF8] flex items-center justify-between bg-white flex-shrink-0">
+              <div>
+                <h3 className="font-black text-sm sm:text-base text-[#261C30]">
+                  {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
+                </h3>
+                <p className="text-[10px] text-[#867894]">
+                  {editingProduct ? 'Modifica los datos y guárdalos en el catálogo' : 'Agrega un nuevo ítem a la tienda'}
+                </p>
+              </div>
               <button 
+                type="button"
                 onClick={() => setIsProductModalOpen(false)}
-                className="text-[#9D91A8] hover:text-[#261C30]"
+                className="p-1.5 rounded-xl hover:bg-[#FAF8F5] text-[#9D91A8] hover:text-[#261C30] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveProduct} className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-[#261C30] block mb-1">Nombre en Español *</label>
-                  <input
-                    type="text"
-                    required
-                    value={prodForm.name}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setProdForm({ 
-                        ...prodForm, 
-                        name: val,
-                        korean_name: translateToKorean(val)
-                      });
-                    }}
-                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7]"
-                    placeholder="Ej. Samyang Buldak Carbonara"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="font-bold text-[#261C30] block">Nombre en Coreano</label>
-                    <span className="text-[10px] text-[#9368B7] font-semibold bg-[#EFE6F7] px-1.5 py-0.5 rounded flex items-center gap-1">
-                      <Lock className="w-2.5 h-2.5" /> Automático
-                    </span>
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSaveProduct} className="flex flex-col flex-1 overflow-hidden text-xs">
+              <div className="p-4 sm:p-5 overflow-y-auto space-y-3 flex-1">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="font-bold text-[#261C30] block mb-1">Nombre en Español *</label>
+                    <input
+                      type="text"
+                      required
+                      value={prodForm.name}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setProdForm({ 
+                          ...prodForm, 
+                          name: val,
+                          korean_name: translateToKorean(val)
+                        });
+                      }}
+                      className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE] focus:ring-2 focus:ring-[#9368B7]"
+                      placeholder="Ej. Samyang Buldak Carbonara"
+                    />
                   </div>
-                  <input
-                    type="text"
-                    readOnly
-                    tabIndex={-1}
-                    value={prodForm.korean_name}
-                    className="w-full bg-[#FAF8F5]/80 p-2 rounded-xl border border-[#EADBEE] text-[#9368B7] font-bold cursor-not-allowed select-all"
-                    placeholder="Se traduce automáticamente al escribir..."
-                  />
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-bold text-[#261C30] block">Nombre en Coreano</label>
+                      <span className="text-[9px] text-[#9368B7] font-semibold bg-[#EFE6F7] px-1.5 py-0.2 rounded flex items-center gap-1">
+                        <Lock className="w-2.5 h-2.5" /> Auto
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      readOnly
+                      tabIndex={-1}
+                      value={prodForm.korean_name}
+                      className="w-full bg-[#FAF8F5]/80 p-2 rounded-xl border border-[#EADBEE] text-[#9368B7] font-bold cursor-not-allowed select-all"
+                      placeholder="Traducción automática..."
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="font-bold text-[#261C30] block mb-1">Código / SKU</label>
-                  <input
-                    type="text"
-                    value={prodForm.code}
-                    onChange={(e) => setProdForm({ ...prodForm, code: e.target.value })}
-                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
-                    placeholder="RAM-001"
-                  />
+                <div className="grid grid-cols-3 gap-2.5">
+                  <div>
+                    <label className="font-bold text-[#261C30] block mb-1">Código / SKU</label>
+                    <input
+                      type="text"
+                      value={prodForm.code}
+                      onChange={(e) => setProdForm({ ...prodForm, code: e.target.value })}
+                      className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
+                      placeholder="RAM-001"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-[#261C30] block mb-1">Categoría *</label>
+                    <select
+                      value={prodForm.category_id}
+                      onChange={(e) => setProdForm({ ...prodForm, category_id: e.target.value })}
+                      className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
+                    >
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.icon} {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-bold text-[#261C30] block mb-1">Unidad</label>
+                    <input
+                      type="text"
+                      value={prodForm.unit}
+                      onChange={(e) => setProdForm({ ...prodForm, unit: e.target.value })}
+                      className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
+                      placeholder="paquete 130g"
+                    />
+                  </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="font-bold text-[#261C30] block mb-1">Precio Unitario (S/.) *</label>
+                    <input
+                      type="number"
+                      step="0.10"
+                      required
+                      value={prodForm.price}
+                      onChange={(e) => setProdForm({ ...prodForm, price: parseFloat(e.target.value) || 0 })}
+                      className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE] font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-[#261C30] block mb-1">Precio Regular (Tachado)</label>
+                    <input
+                      type="number"
+                      step="0.10"
+                      value={prodForm.original_price}
+                      onChange={(e) => setProdForm({ ...prodForm, original_price: parseFloat(e.target.value) || 0 })}
+                      className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
+                      placeholder="Opcional"
+                    />
+                  </div>
+                </div>
+
+                {/* Selector de 3 Niveles de Stock */}
                 <div>
-                  <label className="font-bold text-[#261C30] block mb-1">Categoría *</label>
+                  <label className="font-bold text-[#261C30] block mb-1">Estado de Stock</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(() => {
+                      const currentModalStock: 'available' | 'low' | 'out' =
+                        !prodForm.in_stock || prodForm.stock_quantity === 0
+                          ? 'out'
+                          : prodForm.stock_quantity <= 5
+                          ? 'low'
+                          : 'available';
+
+                      return (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setProdForm({ ...prodForm, in_stock: true, stock_quantity: 25 })}
+                            className={`p-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                              currentModalStock === 'available'
+                                ? 'bg-emerald-50 border-emerald-400 text-emerald-900 ring-2 ring-emerald-200 shadow-xs'
+                                : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
+                            }`}
+                          >
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                            <span>Disponible</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setProdForm({ ...prodForm, in_stock: true, stock_quantity: 3 })}
+                            className={`p-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                              currentModalStock === 'low'
+                                ? 'bg-amber-50 border-amber-400 text-amber-900 ring-2 ring-amber-200 shadow-xs'
+                                : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
+                            }`}
+                          >
+                            <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
+                            <span>Pocas unidades</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setProdForm({ ...prodForm, in_stock: false, stock_quantity: 0 })}
+                            className={`p-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                              currentModalStock === 'out'
+                                ? 'bg-rose-50 border-rose-400 text-rose-900 ring-2 ring-rose-200 shadow-xs'
+                                : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
+                            }`}
+                          >
+                            <span className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
+                            <span>Agotado</span>
+                          </button>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Selector de Destacado / Cinta Superior en la Tarjeta */}
+                <div>
+                  <label className="font-bold text-[#261C30] block mb-1">
+                    Destacado / Cinta Superior del Producto
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(() => {
+                      const isNew = prodForm.tags.includes('novedad');
+                      const isFav = prodForm.is_featured && !isNew;
+                      const isNormal = !isNew && !isFav;
+
+                      return (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setProdForm({
+                                ...prodForm,
+                                is_featured: false,
+                                tags: prodForm.tags.filter(t => t !== 'novedad')
+                              })
+                            }
+                            className={`p-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                              isNormal
+                                ? 'bg-white border-[#9368B7] text-[#261C30] ring-2 ring-[#9368B7]/20 shadow-xs'
+                                : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
+                            }`}
+                          >
+                            <span>🏷️</span>
+                            <span>Normal</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setProdForm({
+                                ...prodForm,
+                                is_featured: true,
+                                tags: prodForm.tags.filter(t => t !== 'novedad')
+                              })
+                            }
+                            className={`p-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                              isFav
+                                ? 'bg-[#EFE6F7] border-[#9368B7] text-[#9368B7] ring-2 ring-[#9368B7]/30 shadow-xs'
+                                : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
+                            }`}
+                          >
+                            <span>✨</span>
+                            <span>Favorito</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setProdForm({
+                                ...prodForm,
+                                is_featured: false,
+                                tags: Array.from(new Set([...prodForm.tags, 'novedad']))
+                              })
+                            }
+                            className={`p-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
+                              isNew
+                                ? 'bg-sky-50 border-sky-400 text-sky-800 ring-2 ring-sky-200 shadow-xs'
+                                : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
+                            }`}
+                          >
+                            <span>🆕</span>
+                            <span>¡Novedad!</span>
+                          </button>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Subir Foto: Cámara, Galería o URL */}
+                <div className="space-y-2 p-3 bg-[#FAF8F5] rounded-2xl border border-[#EADBEE]">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-[#261C30] block">
+                      Foto del Producto *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setImageUploadMode(imageUploadMode === 'upload' ? 'url' : 'upload')}
+                      className="text-[11px] text-[#9368B7] hover:underline font-bold"
+                    >
+                      {imageUploadMode === 'upload' ? '🔗 Usar enlace URL' : '📁 Subir foto o cámara'}
+                    </button>
+                  </div>
+
+                  {/* Hidden input for Camera capture (Mobile) */}
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && processImageFile(e.target.files[0])}
+                  />
+
+                  {/* Hidden input for Gallery / Files (Mobile & PC) */}
+                  <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && processImageFile(e.target.files[0])}
+                  />
+
+                  {imageUploadMode === 'upload' ? (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => cameraInputRef.current?.click()}
+                          className="flex items-center justify-center gap-1.5 p-2 bg-white hover:bg-[#EFE6F7] text-[#9368B7] font-bold rounded-xl border border-[#D8C3E5] shadow-xs transition-colors"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>Tomar Foto (Cámara)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => galleryInputRef.current?.click()}
+                          className="flex items-center justify-center gap-1.5 p-2 bg-white hover:bg-[#EFE6F7] text-[#9368B7] font-bold rounded-xl border border-[#D8C3E5] shadow-xs transition-colors"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5" />
+                          <span>Galería o Archivos</span>
+                        </button>
+                      </div>
+
+                      {isProcessingImage && (
+                        <p className="text-center text-xs text-[#9368B7] font-bold flex items-center justify-center gap-1.5 py-1">
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          Optimizando y preparando foto...
+                        </p>
+                      )}
+
+                      {/* Image Preview thumbnail if available */}
+                      {prodForm.image_url && (
+                        <div className="flex items-center gap-3 p-2 bg-white rounded-xl border border-[#EADBEE]">
+                          <div className="w-12 h-12 bg-[#FAF8F5] rounded-lg p-1 border border-[#F3EDF8] flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={prodForm.image_url}
+                              alt="Previsualización"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0 text-[11px]">
+                            <p className="font-bold text-emerald-700 flex items-center gap-1">
+                              <Check className="w-3.5 h-3.5" />
+                              Foto lista para el catálogo
+                            </p>
+                            <p className="text-[#867894] truncate">
+                              Optimizado para carga rápida en móviles
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setProdForm({ ...prodForm, image_url: '' })}
+                            className="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg"
+                            title="Quitar foto"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* Manual URL fallback */
+                    <div className="space-y-1">
+                      <input
+                        type="url"
+                        value={prodForm.image_url}
+                        onChange={(e) => setProdForm({ ...prodForm, image_url: e.target.value })}
+                        className="w-full bg-white p-2 rounded-xl border border-[#EADBEE]"
+                        placeholder="https://ejemplo.com/foto-ramen.jpg"
+                      />
+                      <p className="text-[10px] text-[#867894]">
+                        Pega el enlace directo a una imagen alojada en la web.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="font-bold text-[#261C30] block mb-1">Promoción Asignada</label>
                   <select
-                    value={prodForm.category_id}
-                    onChange={(e) => setProdForm({ ...prodForm, category_id: e.target.value })}
+                    value={prodForm.promotion_id}
+                    onChange={(e) => setProdForm({ ...prodForm, promotion_id: e.target.value })}
                     className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
                   >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.icon} {c.name}
+                    <option value="">(Ninguna)</option>
+                    {promotions.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.badge_text} - {p.name}
                       </option>
                     ))}
                   </select>
                 </div>
+
                 <div>
-                  <label className="font-bold text-[#261C30] block mb-1">Unidad</label>
-                  <input
-                    type="text"
-                    value={prodForm.unit}
-                    onChange={(e) => setProdForm({ ...prodForm, unit: e.target.value })}
-                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
-                    placeholder="paquete 130g"
+                  <label className="font-bold text-[#261C30] block mb-1">Descripción</label>
+                  <textarea
+                    rows={2}
+                    value={prodForm.description}
+                    onChange={(e) => setProdForm({ ...prodForm, description: e.target.value })}
+                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE] resize-none"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-[#261C30] block mb-1">Precio Unitario (S/.) *</label>
-                  <input
-                    type="number"
-                    step="0.10"
-                    required
-                    value={prodForm.price}
-                    onChange={(e) => setProdForm({ ...prodForm, price: parseFloat(e.target.value) || 0 })}
-                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE] font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-[#261C30] block mb-1">Precio Regular (Tachado)</label>
-                  <input
-                    type="number"
-                    step="0.10"
-                    value={prodForm.original_price}
-                    onChange={(e) => setProdForm({ ...prodForm, original_price: parseFloat(e.target.value) || 0 })}
-                    className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
-                    placeholder="Opcional"
-                  />
-                </div>
-              </div>
-
-              {/* Selector de 3 Niveles de Stock */}
-              <div>
-                <label className="font-bold text-[#261C30] block mb-1.5">Estado de Stock</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(() => {
-                    const currentModalStock: 'available' | 'low' | 'out' =
-                      !prodForm.in_stock || prodForm.stock_quantity === 0
-                        ? 'out'
-                        : prodForm.stock_quantity <= 5
-                        ? 'low'
-                        : 'available';
-
-                    return (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => setProdForm({ ...prodForm, in_stock: true, stock_quantity: 25 })}
-                          className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 transition-all ${
-                            currentModalStock === 'available'
-                              ? 'bg-emerald-50 border-emerald-400 text-emerald-900 ring-2 ring-emerald-200 shadow-xs'
-                              : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
-                          }`}
-                        >
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
-                          <span>Disponible</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setProdForm({ ...prodForm, in_stock: true, stock_quantity: 3 })}
-                          className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 transition-all ${
-                            currentModalStock === 'low'
-                              ? 'bg-amber-50 border-amber-400 text-amber-900 ring-2 ring-amber-200 shadow-xs'
-                              : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
-                          }`}
-                        >
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0" />
-                          <span>Pocas unidades</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setProdForm({ ...prodForm, in_stock: false, stock_quantity: 0 })}
-                          className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 transition-all ${
-                            currentModalStock === 'out'
-                              ? 'bg-rose-50 border-rose-400 text-rose-900 ring-2 ring-rose-200 shadow-xs'
-                              : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
-                          }`}
-                        >
-                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 flex-shrink-0" />
-                          <span>Agotado</span>
-                        </button>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-
-              {/* Selector de Destacado / Cinta Superior en la Tarjeta */}
-              <div>
-                <label className="font-bold text-[#261C30] block mb-1.5">
-                  Destacado / Cinta Superior del Producto
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(() => {
-                    const isNew = prodForm.tags.includes('novedad');
-                    const isFav = prodForm.is_featured && !isNew;
-                    const isNormal = !isNew && !isFav;
-
-                    return (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setProdForm({
-                              ...prodForm,
-                              is_featured: false,
-                              tags: prodForm.tags.filter(t => t !== 'novedad')
-                            })
-                          }
-                          className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
-                            isNormal
-                              ? 'bg-white border-[#9368B7] text-[#261C30] ring-2 ring-[#9368B7]/20 shadow-xs'
-                              : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
-                          }`}
-                        >
-                          <span>🏷️</span>
-                          <span>Normal</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setProdForm({
-                              ...prodForm,
-                              is_featured: true,
-                              tags: prodForm.tags.filter(t => t !== 'novedad')
-                            })
-                          }
-                          className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
-                            isFav
-                              ? 'bg-[#EFE6F7] border-[#9368B7] text-[#9368B7] ring-2 ring-[#9368B7]/30 shadow-xs'
-                              : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
-                          }`}
-                        >
-                          <span>✨</span>
-                          <span>Favorito</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setProdForm({
-                              ...prodForm,
-                              is_featured: false,
-                              tags: Array.from(new Set([...prodForm.tags, 'novedad']))
-                            })
-                          }
-                          className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
-                            isNew
-                              ? 'bg-sky-50 border-sky-400 text-sky-800 ring-2 ring-sky-200 shadow-xs'
-                              : 'bg-[#FAF8F5] border-[#EADBEE] text-[#6B5E78] hover:bg-white'
-                          }`}
-                        >
-                          <span>🆕</span>
-                          <span>¡Novedad!</span>
-                        </button>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-
-              {/* Subir Foto: Cámara, Galería o URL */}
-              <div className="space-y-2 p-3 bg-[#FAF8F5] rounded-2xl border border-[#EADBEE]">
-                <div className="flex items-center justify-between">
-                  <label className="font-bold text-[#261C30] block">
-                    Foto del Producto *
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setImageUploadMode(imageUploadMode === 'upload' ? 'url' : 'upload')}
-                    className="text-[11px] text-[#9368B7] hover:underline font-bold"
-                  >
-                    {imageUploadMode === 'upload' ? '🔗 Usar enlace URL' : '📁 Subir foto o usar cámara'}
-                  </button>
-                </div>
-
-                {/* Hidden input for Camera capture (Mobile) */}
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && processImageFile(e.target.files[0])}
-                />
-
-                {/* Hidden input for Gallery / Files (Mobile & PC) */}
-                <input
-                  ref={galleryInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && processImageFile(e.target.files[0])}
-                />
-
-                {imageUploadMode === 'upload' ? (
-                  <div className="space-y-2.5">
-                    {/* Action buttons: Camera vs Gallery */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => cameraInputRef.current?.click()}
-                        className="flex items-center justify-center gap-1.5 p-2.5 bg-white hover:bg-[#EFE6F7] text-[#9368B7] font-bold rounded-xl border border-[#D8C3E5] shadow-xs transition-colors"
-                      >
-                        <Camera className="w-4 h-4" />
-                        <span>Tomar Foto (Cámara)</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => galleryInputRef.current?.click()}
-                        className="flex items-center justify-center gap-1.5 p-2.5 bg-white hover:bg-[#EFE6F7] text-[#9368B7] font-bold rounded-xl border border-[#D8C3E5] shadow-xs transition-colors"
-                      >
-                        <ImageIcon className="w-4 h-4" />
-                        <span>Galería o Archivos</span>
-                      </button>
-                    </div>
-
-                    {isProcessingImage && (
-                      <p className="text-center text-xs text-[#9368B7] font-bold flex items-center justify-center gap-1.5 py-1">
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        Optimizando y preparando foto...
-                      </p>
-                    )}
-
-                    {/* Image Preview thumbnail if available */}
-                    {prodForm.image_url && (
-                      <div className="flex items-center gap-3 p-2 bg-white rounded-xl border border-[#EADBEE]">
-                        <div className="w-14 h-14 bg-[#FAF8F5] rounded-lg p-1 border border-[#F3EDF8] flex items-center justify-center overflow-hidden flex-shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={prodForm.image_url}
-                            alt="Previsualización"
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0 text-[11px]">
-                          <p className="font-bold text-emerald-700 flex items-center gap-1">
-                            <Check className="w-3.5 h-3.5" />
-                            Foto lista para el catálogo
-                          </p>
-                          <p className="text-[#867894] truncate">
-                            Optimizado para carga rápida en móviles
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setProdForm({ ...prodForm, image_url: '' })}
-                          className="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg"
-                          title="Quitar foto"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  /* Manual URL fallback */
-                  <div className="space-y-1">
-                    <input
-                      type="url"
-                      value={prodForm.image_url}
-                      onChange={(e) => setProdForm({ ...prodForm, image_url: e.target.value })}
-                      className="w-full bg-white p-2 rounded-xl border border-[#EADBEE]"
-                      placeholder="https://ejemplo.com/foto-ramen.jpg"
-                    />
-                    <p className="text-[10px] text-[#867894]">
-                      Pega el enlace directo a una imagen alojada en la web.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="font-bold text-[#261C30] block mb-1">Promoción Asignada</label>
-                <select
-                  value={prodForm.promotion_id}
-                  onChange={(e) => setProdForm({ ...prodForm, promotion_id: e.target.value })}
-                  className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE]"
-                >
-                  <option value="">(Ninguna)</option>
-                  {promotions.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.badge_text} - {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-bold text-[#261C30] block mb-1">Descripción</label>
-                <textarea
-                  rows={2}
-                  value={prodForm.description}
-                  onChange={(e) => setProdForm({ ...prodForm, description: e.target.value })}
-                  className="w-full bg-[#FAF8F5] p-2 rounded-xl border border-[#EADBEE] resize-none"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2">
+              {/* Footer Sticky */}
+              <div className="px-5 py-3 border-t border-[#F3EDF8] flex items-center justify-end gap-2 bg-[#FAF8F5]/80 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsProductModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-[#EADBEE] text-[#6B5E78]"
+                  className="px-4 py-2 rounded-xl border border-[#EADBEE] bg-white text-[#6B5E78] font-bold hover:bg-[#FAF8F5] transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#9368B7] hover:bg-[#7E52A3] text-white px-5 py-2 rounded-xl font-bold shadow-md"
+                  className="bg-[#9368B7] hover:bg-[#7E52A3] text-white px-5 py-2 rounded-xl font-bold shadow-md shadow-[#9368B7]/20 flex items-center gap-1.5 transition-all"
                 >
-                  Guardar Producto
+                  <Check className="w-4 h-4" />
+                  <span>Guardar Producto</span>
                 </button>
               </div>
             </form>
